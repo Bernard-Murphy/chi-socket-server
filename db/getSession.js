@@ -1,12 +1,12 @@
 const connect = require("./connect");
 
-const getSession = (options) =>
+const getSession = ({ instanceID, sessionID }) =>
   new Promise(async (resolve, reject) =>
-    connect(options.instanceID, async (db) => {
+    connect(instanceID, async (db) => {
       try {
         const session = await db
           .collection("sessions")
-          .findOne({ _id: options.sessionID });
+          .findOne({ "session.sessionID": sessionID });
         if (!session) return reject("Session not found");
         resolve(session.session);
       } catch (err) {

@@ -11,8 +11,8 @@ const connect = require("./connect");
  */
 
 const getUnreadModLogs = (options) => {
-  const { instanceID } = options;
-  new Promise(async (resolve, reject) =>
+  const { instanceID, userID } = options;
+  return new Promise(async (resolve, reject) =>
     connect(instanceID, async (db) => {
       try {
         const unreadModLogs = await db.collection("modLogs").countDocuments({

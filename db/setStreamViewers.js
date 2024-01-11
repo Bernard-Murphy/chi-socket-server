@@ -12,7 +12,7 @@ const connect = require("./connect");
 
 const setStreamViewers = (options) => {
   const { instanceID, userID, viewers } = options;
-  new Promise(async (resolve, reject) =>
+  return new Promise(async (resolve, reject) =>
     connect(instanceID, async (db) => {
       try {
         const update = await db.collection("users").findOneAndUpdate(

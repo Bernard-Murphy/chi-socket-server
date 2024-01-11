@@ -1,0 +1,819 @@
+/**
+* Width
+*/
+
+@media screen and (max-width: 1300px) {
+  .file-modal-close-small {
+    display: block;
+  }
+
+  .file-modal-containers {
+    flex-direction: column;
+  }
+
+  .file-stats {
+    font-size: 1.5rem;
+  }
+
+  .file-modal-containers > .w-75,
+  .file-modal-containers > .w-25 {
+    width: 100% !important;
+  }
+
+  .file-modal-containers > .w-75 {
+    height: 67% !important;
+  }
+
+  .file-modal-containers > .w-25 {
+    height: 33% !important;
+  }
+
+  .emission-details-file {
+    flex-direction: column;
+    padding-right: 1rem;
+    justify-content: flex-start !important;
+  }
+
+  .file-action-buttons {
+    flex-direction: column;
+  }
+
+  .file-action-buttons > .dropdown {
+    margin-left: 0 !important;
+  }
+
+  .file-media-container {
+    justify-content: flex-start !important;
+  }
+
+  .file-data > p {
+    text-align: left !important;
+  }
+
+  .file-ids {
+    /* display: none !important; */
+    width: max-content;
+  }
+
+  .file-details-body {
+    display: flex;
+    flex-grow: 1;
+    height: 0;
+  }
+
+  .file-emission-bodies {
+    height: 100%;
+    width: 0;
+    flex-grow: 1;
+    overflow-y: auto;
+  }
+
+  .file-modal-info > hr {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .file-modal-info {
+    padding: 0.5rem 0.5rem 0 0.5rem;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+@media screen and (min-width: 1201px) {
+  .edit-profile-divider {
+    display: none;
+  }
+
+  .feed-nav-stats {
+    padding-left: 1.5rem;
+    padding-right: 0;
+  }
+}
+
+@media screen and (max-width: 1200px) {
+  .edit-profile-footer {
+    display: block;
+  }
+
+  .divider-user-action-modal {
+    width: 100%;
+    margin: 0.33rem 0 1rem 0;
+  }
+
+  .edit-profile-footer > div,
+  .edit-profile-footer > button,
+  .edit-profile-footer > div > button,
+  .edit-profile-footer > div > div > button,
+  .edit-profile-footer > div > div {
+    display: block;
+    width: 100%;
+  }
+
+  .edit-profile-footer > div > button,
+  .edit-profile-footer > div > div > button,
+  .edit-profile-footer > button {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .edit-profile-footer > div {
+    margin: 0 !important;
+  }
+
+  .sample-profile-info,
+  .profile-info {
+    margin-top: 3rem;
+  }
+
+  .profile-stat-container {
+    flex-direction: column;
+  }
+
+  .profile-stat-container > div {
+    margin-left: 0 !important;
+  }
+
+  .profile-stat-container > div > p {
+    text-align: left !important;
+  }
+
+  .edit-profile-buttons-actions,
+  .edit-profile-buttons-decisions {
+    flex-direction: column;
+  }
+
+  .edit-profile-buttons-decisions {
+    align-items: flex-end !important;
+  }
+
+  .edit-profile-buttons-decisions > button {
+    margin-right: 0 !important;
+    margin-bottom: 0.5rem;
+  }
+
+  .edit-profile-buttons-actions > button {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 0.5rem;
+  }
+
+  .stream-chat {
+    width: 300px;
+  }
+
+  .feed-container {
+    flex-direction: column-reverse;
+  }
+
+  .feed-emission-container {
+    margin: 0;
+    max-width: 100%;
+  }
+
+  .feed-emissions {
+    width: 100%;
+  }
+
+  .feed-nav-stats {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .feed-nav-trending {
+    width: 50%;
+    margin-top: 3rem;
+  }
+}
+
+@media screen and (min-width: 993px) {
+  /* Large and higher */
+
+  .menu-toggle {
+    display: none !important;
+  }
+
+  .page-container {
+    padding-left: 87px;
+  }
+
+  .message-container {
+    padding-left: 100px;
+  }
+}
+
+@media screen and (max-width: 992px) {
+  .background-picture-uam {
+    margin-top: 1rem !important;
+  }
+  .hr-pictures-uam {
+    display: block !important;
+    margin-top: 1rem;
+  }
+  /* Large and lower */
+  .file-button-container {
+    max-width: 100% !important;
+    width: 100%;
+    margin: 0;
+  }
+  .message-list-lg {
+    display: none;
+  }
+
+  .message-list-mobile {
+    display: block;
+  }
+
+  .message-button-container {
+    justify-content: space-between;
+  }
+
+  .message-list-buttons {
+    display: block !important;
+  }
+
+  .details-modal-ban-options {
+    flex-direction: column;
+  }
+
+  .details-modal-ban-options > .flex-grow-1 {
+    align-self: stretch;
+    margin-top: 1rem;
+  }
+
+  .sample-profile-fact,
+  .sample-profile-fact > p,
+  .profile-fact,
+  .profile-fact > p {
+    margin: 0 !important;
+  }
+
+  .sample-profile-info > .row > .d-flex,
+  .sample-profile-profile-container,
+  .profile-info > .row > .col-8,
+  .profile-info > .row > .col-12,
+  .profile-action-buttons,
+  .profile-profile-info {
+    flex-direction: column;
+  }
+
+  .profile-action-buttons {
+    align-items: end;
+  }
+
+  .profile-action-buttons > .w-max-content {
+    margin-right: 0 !important;
+    margin-bottom: 0.5rem;
+  }
+
+  .profile-action-buttons > .dropdown,
+  .profile-profile-info {
+    margin-top: 0.5rem;
+  }
+
+  .sample-profile-info {
+    margin-bottom: 1rem;
+  }
+
+  .profile-stat-container {
+    flex-direction: row;
+  }
+
+  .profile-stat-container > div {
+    margin-left: 0.5rem !important;
+  }
+
+  .profile-stat-container > div > p {
+    text-align: right !important;
+  }
+
+  .profile-stat-container > div > .profile-likes {
+    text-align: left !important;
+  }
+
+  .live-mini {
+    left: 0.5rem !important;
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .text-input-tooltips-send-main {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-end;
+  }
+
+  #text-input-buttons-main {
+    align-items: start !important;
+  }
+
+  #send-button-main,
+  .count-stats-main {
+    margin-right: 1.5rem;
+  }
+
+  #send-button-main {
+    margin-top: 1rem;
+  }
+
+  .file-stats {
+    font-size: 1.25rem;
+  }
+
+  .page-container {
+    max-width: 100%;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .emission-name-info {
+    flex-direction: column-reverse;
+    align-items: start !important;
+  }
+
+  .emission-name-info > small > i {
+    margin-left: 0 !important;
+  }
+
+  .file-modal-arrows {
+    font-size: 2em;
+  }
+
+  .profile-action-buttons {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .emission-input-buttons {
+    flex-direction: column-reverse;
+    align-items: flex-start !important;
+  }
+
+  .emission-input-buttons > div,
+  .emission-input-buttons > div > div {
+    width: 100%;
+  }
+
+  .stream-button-live {
+    left: 15%;
+  }
+
+  .stream-chat {
+    width: 200px;
+  }
+
+  .stream-chat-input {
+    flex-direction: column;
+    padding: 0.66rem;
+  }
+
+  .stream-chat-actions {
+    width: 100%;
+    margin-top: 0.5rem;
+    align-items: end !important;
+  }
+}
+
+@media screen and (max-width: 700px) {
+  .emission-footers {
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+  }
+}
+
+@media screen and (min-width: 600px) {
+  .emission-footer-buttons {
+    margin-right: 0.5rem;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .file-modal-info > .pe-1rem > hr {
+    margin-bottom: 0 !important;
+  }
+  .emission-details-file {
+    padding-top: 1rem;
+    flex-direction: row;
+    padding-right: 0;
+    justify-content: space-between !important;
+  }
+  .file-emission-bodies {
+    width: 100%;
+    min-height: auto;
+    height: auto;
+    flex-grow: 0;
+    overflow-y: hidden;
+  }
+  .file-details-body {
+    display: block;
+  }
+  .notification-icon-avatar {
+    flex-direction: column !important;
+    align-items: start !important;
+  }
+  .modlog-time {
+    display: flex;
+  }
+
+  .mod-log-text {
+    margin-top: 0.5rem !important;
+  }
+
+  .modlog-timehr {
+    margin-left: 0.5rem !important;
+  }
+  .emission-footers > .d-flex {
+    justify-content: space-between;
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+  }
+
+  .notification-names {
+    margin-top: 1rem;
+  }
+
+  .notification-list-items {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .emission-stat-icons {
+    margin-right: 0.3rem;
+  }
+
+  .emission-details {
+    flex-direction: column;
+  }
+
+  .file-arrow-containers {
+    padding: 0.5rem;
+  }
+}
+
+@media screen and (max-width: 576px) {
+  .file-modal-arrows {
+    font-size: 1.2em;
+  }
+
+  .file-stats {
+    font-size: 1rem;
+  }
+
+  #detail-modal-body-child {
+    padding-right: 0.5rem !important;
+    padding-left: 0.5rem !important;
+  }
+
+  .mod-log-text {
+    font-size: 1rem;
+  }
+
+  .stream-button-live {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  #go-live-button-desktop {
+    display: none;
+  }
+
+  #go-live-button-mobile {
+    margin-top: 1rem;
+    margin-left: 1rem;
+    display: block;
+  }
+
+  #send-live-buttons-mobile-main,
+  #send-live-buttons-mobile-message {
+    width: 100%;
+  }
+
+  #text-input-buttons-main {
+    justify-content: space-between !important;
+  }
+
+  .text-input-tooltips-send-main {
+    width: 100%;
+  }
+
+  .text-input-tooltips-main {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .feed-nav-stats {
+    flex-direction: column;
+  }
+
+  .feed-nav-trending {
+    width: 100%;
+    margin: 1.5rem 0;
+  }
+
+  ::-webkit-scrollbar-track {
+    -webkit-box-shadow: none;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border-radius: 6px;
+    border: solid 1px transparent;
+  }
+
+  .report-detail-buttons {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    white-space: nowrap !important;
+  }
+
+  .message-list-buttons {
+    display: none !important;
+  }
+
+  .message-list-buttons-mobile {
+    margin-top: 1rem;
+    display: block;
+  }
+
+  #send-button-message,
+  .count-message {
+    margin-right: 1rem;
+  }
+
+  #send-button-message {
+    margin-top: 1rem;
+  }
+
+  .text-input-tooltips-send-message {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  #text-input-buttons-message {
+    flex-direction: column;
+  }
+
+  .text-input-tooltips-messages {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .messages-send {
+    width: 100%;
+  }
+}
+
+@media screen and (min-width: 450px) {
+  .login-modal-form-button-sm {
+    display: none !important;
+  }
+}
+
+@media screen and (max-width: 450px) {
+  .login-modal-footer > button {
+    display: none;
+  }
+
+  .login-modal-footer > div > button {
+    width: 100%;
+    display: block;
+    margin-bottom: 0.5rem;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .file-stats {
+    font-size: 0.85rem;
+  }
+
+  .login-modal-footer > div {
+    display: block !important;
+    margin: 0;
+    width: 100%;
+  }
+
+  .emission-modal-buttons > button,
+  .emission-modal-buttons > span > button {
+    padding: 0.75rem;
+  }
+
+  #emission-modal-send-button {
+    padding: 0.625rem 1.5rem 0.5rem 1.5rem !important;
+  }
+
+  .emission-modal-buttons {
+    justify-content: space-between !important;
+  }
+
+  .profile-tabs > div > div > button {
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
+    font-size: 0.66rem;
+  }
+
+  .profile-container > .container {
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+
+  .emission-footer-buttons {
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+
+  .emission-footers {
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .emission-copy-copy {
+    display: none;
+  }
+
+  .emission-text-mobile {
+    display: block;
+  }
+
+  .emission-text-regular {
+    display: none;
+  }
+
+  .emission-headers {
+    flex-direction: column;
+  }
+
+  .emission-headers > .flex-grow-1 {
+    width: 100% !important;
+  }
+
+  .emission-name-info {
+    margin-top: 0.75rem;
+  }
+
+  .emission-name-info > small {
+    margin-top: 0.75rem;
+  }
+
+  .emission-name-info > small > i {
+    display: block;
+  }
+
+  .report-details {
+    flex-direction: column;
+  }
+
+  .modal-footer-small-buttons,
+  .modal-footer-small-buttons > .d-flex {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .modal-footer-small-buttons > button,
+  .modal-footer-small-buttons > .d-flex > button {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .modal-footer-small-buttons > .d-flex > .bg-gray {
+    margin-top: 0.5rem;
+  }
+
+  .details-modal-ban-options > .d-flex {
+    flex-direction: column;
+  }
+
+  .details-modal-ban-options > .d-flex > .px-4 {
+    margin-top: 1rem;
+  }
+
+  .remove-emission-reasons {
+    flex-direction: column;
+  }
+
+  .emission-input-buttons > div > div {
+    flex-direction: column;
+  }
+
+  .emission-input-buttons > div > div > button {
+    margin-left: auto;
+    margin-top: 0.7rem;
+  }
+
+  .stream-button-live {
+    left: 20%;
+  }
+
+  .stream-chat-messages > .d-flex > .chat-avatars {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .stream-chat-messages {
+    padding: 0.33rem !important;
+  }
+
+  .stream-chat {
+    width: 170px;
+  }
+
+  .stream-device-toggle {
+    padding: 0 !important;
+  }
+
+  .live-viewers-close > .rounded-pill > h5 {
+    font-size: 1rem;
+  }
+
+  .live-viewers-close > .rounded-pill {
+    padding: 0.5rem !important;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .report-detail-buttons {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    font-size: 0.66rem;
+  }
+
+  .report-info-container > h5 {
+    font-size: 1rem;
+  }
+
+  #live-send-buttons-divider-main {
+    display: block;
+    width: 100%;
+  }
+
+  #send-live-buttons-mobile-main {
+    flex-direction: column;
+  }
+
+  #go-live-button-mobile,
+  #send-button-main {
+    width: 100%;
+    margin: 0.5rem 0 !important;
+  }
+
+  .stream-device-toggle {
+    margin-top: 3rem;
+  }
+
+  .stream-devices-container.scale-half-up {
+    transform: scale(0.66, 0.66) translateY(-1rem);
+  }
+}
+
+@media screen and (max-width: 380px) {
+  .profile-tabs > div > div > button {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .profile-tabs > div {
+    width: 100vw;
+    overflow-x: auto !important;
+  }
+
+  .profile-tabs > div::-webkit-scrollbar-track {
+    -webkit-box-shadow: none;
+  }
+
+  .profile-tabs > div::-webkit-scrollbar {
+    height: 0.15rem;
+  }
+
+  .profile-tabs > div::-webkit-scrollbar-thumb {
+    border-radius: 0.1rem;
+    border: 0px;
+  }
+}
+
+/**
+* Height
+*/
+
+@media screen and (max-height: 700px) {
+  .nav-icons {
+    font-size: 1.33333em;
+    line-height: 0.75em;
+    vertical-align: -0.0667em;
+  }
+
+  .nav-item-containers {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .stream-chat {
+    height: 80vh;
+  }
+}

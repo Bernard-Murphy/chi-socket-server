@@ -15,21 +15,22 @@ const socketHandler = (io, socket) => {
    * if on profile page, join profile room (username卐)
    * If on tag page, join tag room (tag卐卐)
    */
-  if (!socket.handshake.query?.request?.session) {
+  if (!socket.request?.session) {
     console.log("no session found");
     return;
   }
   console.log("New connection");
+  console.log("join", socket.handshake.query.join);
+  console.log(
+    "session",
+    socket.request.session.userInfo?._id || socket.request.session.tempID
+  );
 
   socket.join(socket.handshake.query.join);
   socket.join(
-    socket.handshake.query.request.session.userInfo?._id ||
-      socket.handshake.query.request.session.tempID
+    socket.request.session.userInfo?._id || socket.request.session.tempID
   );
-  socket.join(
-    socket.handshake.query.request.session.userInfo?._id ||
-      socket.handshake.query.request.session.tempID
-  );
+
   socket.on("update-state", (state) => {
     socket.leave(state.previous.join);
     socket.join(state.current.join);

@@ -6,8 +6,10 @@ const getUnreadMessagesNotifications = require("./getUnreadMessagesNotifications
 const newMessage = require("./newMessage");
 const setMessageRead = require("./setMessageRead");
 const setStreamViewers = require("./setStreamViewers");
+const connect = require("./connect");
 
 module.exports = {
+  connect,
   endStream,
   getOpenReports,
   getSession,

@@ -18,6 +18,8 @@ const connect = async (database, callback) =>
     } catch (err) {
       reject(err);
     }
-  }).finally(callback);
+  })
+    .then(callback)
+    .catch(callback);
 
 module.exports = connect;

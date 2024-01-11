@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Document</title>
+            <script src="http://localhost:3063/scripts/peerjs.newest.js"></script>
+        </head>
+        <body>
+            <script defer>
+                let stream;
+                const peer = new Peer(undefined, {
+                    host: "192.168.0.30",
+                    port: 9000
+                });
+                peer.on('open', id => {
+                    navigator.mediaDevices.getUserMedia({
+                        audio: true,
+                        video: false
+                    }).then(async mediaStream => {
+                        const call = peer.call('test', mediaStream);
+                        call.on('stream', stream => console.log('stream', stream));
+                        console.log(call);
+                    }).catch(err => console.log(err));
+                });
+                peer.on('call', call => {
+                    console.log('call');
+                    if (call.peer === "test"){
+                        call.answer();
+                        call.on('stream', clientStream => {
+                            console.log('stream', clientStream);
+                            stream = clientStream;
+                        });
+                    }
+                });
+                peer.on('connection', connection => {
+                    console.log('connection', connection);
+                    if (stream) peer.call(connection.peer, stream);
+                });
+            </script>
+        </body>
+        </html>

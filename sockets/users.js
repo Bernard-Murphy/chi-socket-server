@@ -22,11 +22,13 @@ const userSocket = async (io, socket) => {
       try {
         if (userID) {
           socket.emit("initialized");
-          const { unreadMessages, notifications } =
+          const unreadMessagesNotifications =
             await getUnreadMessagesNotifications({
               instanceID,
               userID,
             });
+
+          const { unreadMessages, notifications } = unreadMessagesNotifications;
           socket.emit("message-count", unreadMessages);
           socket.emit("notification-count", notifications);
 
@@ -35,7 +37,10 @@ const userSocket = async (io, socket) => {
             socket.emit("report-count", openReports);
           }
           if (h.checkChadmin(socket.request)) {
-            const unreadModLogs = await getUnreadModLogs({ instanceID });
+            const unreadModLogs = await getUnreadModLogs({
+              instanceID,
+              userID,
+            });
             socket.emit("unread-modlog-count", unreadModLogs);
           }
         }
