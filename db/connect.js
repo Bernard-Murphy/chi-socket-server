@@ -16,6 +16,7 @@ const connect = async (database, callback) =>
       const db = client.db(database);
       resolve(db);
     } catch (err) {
+      console.log("connection error", err);
       reject(err);
     }
   })

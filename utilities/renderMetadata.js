@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const mime = require("mime-types");
+const { getInstanceInfo } = require("../db");
 
 const files = [
   "/browserconfig.xml",
@@ -16,15 +17,25 @@ const renderMetadata = async (req, res, next) => {
     ) {
       const filePath = path.join(__dirname, "..", "public", req.url);
       const fileData = fs.readFileSync(filePath)?.toString();
+      const instanceID = process.env.DATABASE;
+      const hostname = req.hostname;
+      const instanceInfo = await getInstanceInfo({ hostname, instanceID });
       res.set("Content-Type", mime.lookup(filePath));
+
       if (fileData) {
-        return res
-          .status(200)
-          .send(
-            fileData
-              .replace("卐卐S3卐卐", req.hostname)
-              .replace("卐卐DOMAIN卐卐", req.hostname)
-          );
+        switch (req.url) {
+          default:
+            return res
+              .status(200)
+              .send(
+                fileData
+                  .replace(
+                    "卐卐S3卐卐",
+                    process.env.BUCKET_HOST + "/" + instanceInfo.instanceID
+                  )
+                  .replace("卐卐DOMAIN卐卐", req.hostname)
+              );
+        }
       }
     }
   } catch (err) {

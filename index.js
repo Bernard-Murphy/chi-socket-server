@@ -84,9 +84,7 @@ app.post("/socket-emit", (req, res) => {
   res.sendStatus(200);
 });
 
-app.use(renderMetadata);
-
-app.use(express.static(__dirname + "/public"));
+app.use(express.static(__dirname + "/public", { index: false }));
 
 app.get("/", renderSite);
 

@@ -12,7 +12,7 @@ const connect = require("./connect");
 
 const template = (options) => {
   const { instanceID } = options;
-  new Promise(async (resolve, reject) =>
+  return new Promise(async (resolve, reject) =>
     connect(instanceID, async (db) => {
       try {
         resolve();
