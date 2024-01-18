@@ -17,7 +17,8 @@ const getInstanceInfo = (options) => {
       try {
         const instanceInfo = await db
           .collection("instances")
-          .findOne({ domain: hostname });
+          // .findOne({ domain: hostname });
+          .findOne({ _id: "e133a531e75df8cc" });
         resolve(instanceInfo);
       } catch (err) {
         reject(err);
