@@ -8,8 +8,21 @@ const newMessage = require("./newMessage");
 const setMessageRead = require("./setMessageRead");
 const setStreamViewers = require("./setStreamViewers");
 const connect = require("./connect");
+const { MongoClient } = require("mongodb");
+
+const mongoUrl =
+  "mongodb+srv://" +
+  process.env.MONGO_USER +
+  ":" +
+  encodeURIComponent(process.env.MONGO_PASSWORD) +
+  "@" +
+  process.env.MONGO_HOST +
+  "/?retryWrites=true&w=majority";
+
+const client = new MongoClient(mongoUrl);
 
 module.exports = {
+  client,
   connect,
   endStream,
   getInstanceInfo,

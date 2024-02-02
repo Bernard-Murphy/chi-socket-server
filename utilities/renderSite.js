@@ -15,22 +15,25 @@ const renderSite = async (req, res) => {
       .split('<link rel="stylesheet" href="卐"/>')
       .map((slice, s) => {
         if (!s) {
-          slice = slice.replaceAll(
-            '"/',
-            '"' + process.env.BUCKET_HOST + "/" + instanceInfo.instanceID + "/"
-          );
+          slice = slice
+            .split('"/')
+            .join(
+              '"' +
+                process.env.BUCKET_HOST +
+                "/" +
+                instanceInfo.instanceID +
+                "/"
+            );
         }
         return slice;
       })
       .join("");
-    html = html.replaceAll(
-      "卐卐app_name卐卐",
-      instanceInfo.preferences.app_name
-    );
-    html = html.replaceAll(
-      "卐卐description卐卐",
-      instanceInfo.preferences.description
-    );
+    html = html
+      .split("卐卐app_name卐卐")
+      .join(instanceInfo.preferences.app_name);
+    html = html
+      .split("卐卐description卐卐")
+      .join(instanceInfo.preferences.description);
     if (req.session.userInfo) {
       req.session.theme = req.session.userInfo.userSettings.theme;
       html += `<p id="user-info-server" class="d-none m-0">${JSON.stringify({
