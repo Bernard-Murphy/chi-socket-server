@@ -2,10 +2,9 @@ const h = require("../utilities/helpers");
 const { newMessage, setMessageRead } = require("../db");
 const maxChars = 5000;
 
-const messageSocket = () => async (io, socket) => {
+const messageSocket = () => async (io, socket, host, suffix) => {
   try {
     let lastMessage = new Date();
-
     /**
      * Hit when the user reads their private messages
      * Marks the message as read
@@ -51,24 +50,24 @@ const messageSocket = () => async (io, socket) => {
         ) {
           lastMessage = new Date();
           if (
-            socket.request.session &&
-            socket.request.session.userInfo &&
-            !socket.request.session.userInfo.ban.banned
+            socket.request.session[host] &&
+            socket.request.session[host].userInfo &&
+            !socket.request.session[host].userInfo.ban.banned
           ) {
             message.message = h.sanitizeHTML(message.message);
             if (h.checkHTMLLength(message.message) <= maxChars) {
               await newMessage({
                 message: message,
-                session: request.session,
-                instanceID: request.session.instanceID,
+                session: request.session[host],
+                instanceID: request.session[host].instanceID,
               });
-              io.to(socket.request.session.userInfo.userID)
-                .to(message.to.username.toLowerCase() + "-self")
+              io.to(socket.request.session[host].userInfo.userID + suffix)
+                .to(message.to.userID + suffix)
                 .emit("new-message", {
                   message: message.message,
                   timestamp: new Date(),
-                  author: socket.request.session.userInfo._id,
-                  party: socket.request.session.userInfo._id,
+                  author: socket.request.session[host].userInfo._id,
+                  party: socket.request.session[host].userInfo._id,
                   id: message.id,
                 });
             }

@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const mime = require("mime-types");
 const { getInstanceInfo } = require("../db");
+const h = require("../utilities/helpers");
 
 const imageExtensions =
   "image/png image/jpeg image/jpg image/gif image/bmp image/webp image/svg+xml ";
@@ -30,7 +31,7 @@ const renderMetadata = async (req, res, next) => {
       let fileData = fs.readFileSync(filePath)?.toString();
       if (fileData) {
         const instanceID = process.env.DATABASE;
-        const hostname = req.hostname;
+        const hostname = h.parseHost(req.hostname);
         const instanceInfo = await getInstanceInfo({ hostname, instanceID });
 
         Object.keys(instanceInfo.preferences)

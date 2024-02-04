@@ -6,6 +6,7 @@
 
 const messages = require("./messages");
 const users = require("./users");
+const h = require("../utilities/helpers");
 
 const socketHandler = (io, socket) => {
   /**
@@ -19,28 +20,38 @@ const socketHandler = (io, socket) => {
     console.log("no session found");
     return;
   }
+  let host = socket.request.headers.Referer || socket.request.headers.referer;
+  if (!host) {
+    console.log("No host", socket.request.headers);
+    return;
+  }
+  host = h.parseHost(host);
+  const suffix = "卐卐卐卐" + socket.request.session[host].instanceID;
+  console.log(socket.request.session[host]);
   console.log("New connection");
   console.log("join", socket.handshake.query.join);
   console.log(
     "session",
-    socket.request.session.userInfo?._id || socket.request.session.tempID
+    socket.request.session[host].userInfo?._id ||
+      socket.request.session[host].tempID
   );
 
-  socket.join(socket.handshake.query.join);
+  socket.join(socket.handshake.query.join + suffix);
   socket.join(
-    socket.request.session.userInfo?._id || socket.request.session.tempID
+    (socket.request.session[host].userInfo?._id ||
+      socket.request.session[host].tempID) + suffix
   );
 
   socket.on("update-state", (state) => {
-    socket.leave(state.previous.join);
-    socket.join(state.current.join);
+    socket.leave(state.previous.join + suffix);
+    socket.join(state.current.join + suffix);
     socket.join(
-      socket.handshake.query.request.session.userInfo?._id ||
-        socket.handshake.query.request.session.tempID
+      (socket.request.session[host].userInfo?._id ||
+        socket.request.session[host].tempID) + suffix
     );
   });
-  messages(io, socket);
-  users(io, socket);
+  messages(io, socket, host, suffix);
+  users(io, socket, host, suffix);
 };
 
 module.exports = socketHandler;

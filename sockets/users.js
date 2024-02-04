@@ -9,11 +9,11 @@ const h = require("../utilities/helpers");
 const { io: streamIO } = require("socket.io-client");
 const { live_title_schema } = require("../utilities/validations");
 
-const userSocket = async (io, socket) => {
+const userSocket = async (io, socket, host, suffix) => {
   try {
-    const userID = socket.request.session?.userInfo?._id;
-    const username = socket.request.session?.userInfo?.username + "卐";
-    const instanceID = socket.request.session?.instanceID;
+    const userID = socket.request.session[host].userInfo?._id;
+    const username = socket.request.session[host].userInfo?.username + "卐";
+    const instanceID = socket.request.session[host].instanceID;
     const room = socket.handshake.query.join;
     let streamSocket;
     let lastMessage = new Date();
@@ -67,12 +67,12 @@ const userSocket = async (io, socket) => {
         ) {
           lastMessage = new Date();
           if (message.message.length < 501) {
-            io.to(username).emit("stream-chat", {
+            io.to(username + suffix).emit("stream-chat", {
               ...message,
               user: room.split("卐")[0],
               timestamp: new Date(),
             });
-            io.to(userID).emit("stream-chat-self", {
+            io.to(userID + suffix).emit("stream-chat-self", {
               ...message,
               user: username.split("卐")[0],
               timestamp: new Date(),
@@ -101,12 +101,12 @@ const userSocket = async (io, socket) => {
         ) {
           lastMessage = new Date();
           if (message.message.length < 501) {
-            io.to(room.split("卐")[0]).emit("stream-chat", {
+            io.to(room.split("卐")[0] + suffix).emit("stream-chat", {
               ...message,
               user: room.split("卐")[0],
               timestamp: new Date(),
             });
-            io.to(room).emit("stream-chat-self", {
+            io.to(room + suffix).emit("stream-chat-self", {
               ...message,
               user: username.split("卐")[0],
               timestamp: new Date(),
@@ -132,7 +132,7 @@ const userSocket = async (io, socket) => {
           userID &&
           (process.env.STREAMING_VERIFICATION_REQUIRED !== "true" ||
             h.checkJanny(socket.request) ||
-            socket.request.session.userInfo.verified)
+            socket.request.session[host].userInfo.verified)
         ) {
           try {
             live_title_schema.validateSync(
@@ -153,8 +153,11 @@ const userSocket = async (io, socket) => {
               peerID: details.peerID,
               userID: userID,
               instanceID: process.env.INSTANCE_ID,
-              avatar: JSON.stringify(socket.request.session.userInfo.avatar),
-              username: socket.request.session.userInfo.username.split("卐")[0],
+              avatar: JSON.stringify(
+                socket.request.session[host].userInfo.avatar
+              ),
+              username:
+                socket.request.session[host].userInfo.username.split("卐")[0],
               headers: JSON.stringify(socket.request.headers),
               streamTitle: details.streamTitle,
               root: process.env.ROOT,
@@ -170,8 +173,14 @@ const userSocket = async (io, socket) => {
                 viewers,
               });
               if (update.value) {
-                io.to(username).emit("viewers", update.value.live.viewers);
-                io.to(userID).emit("viewers-self", update.value.live.viewers);
+                io.to(username + suffix).emit(
+                  "viewers",
+                  update.value.live.viewers
+                );
+                io.to(userID + suffix).emit(
+                  "viewers-self",
+                  update.value.live.viewers
+                );
               }
             } catch (err) {
               console.log("set viewers error", err);
@@ -197,8 +206,8 @@ const userSocket = async (io, socket) => {
           instanceID,
           userID,
         });
-        io.to(username).emit("stream-end");
-        io.to(userID).emit("stream-terminated");
+        io.to(username + suffix).emit("stream-end");
+        io.to(userID + suffix).emit("stream-terminated");
       } catch (err) {
         console.log(err);
       }
@@ -213,15 +222,15 @@ const userSocket = async (io, socket) => {
 
     socket.on("disconnecting", async () => {
       try {
-        if (socket.request.session.userInfo && streamSocket) {
+        if (socket.request.session[host].userInfo && streamSocket) {
           if (streamSocket.disconnect) streamSocket.disconnect();
           streamSocket = false;
           await endStream({
             instanceID,
             userID,
           });
-          io.to(username).emit("stream-end");
-          io.to(userID).emit("stream-terminated");
+          io.to(username + suffix).emit("stream-end");
+          io.to(userID + suffix).emit("stream-terminated");
         }
       } catch (err) {
         console.log("disconnected error", err);

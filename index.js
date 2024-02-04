@@ -4,6 +4,7 @@ const MongoDBStore = require("connect-mongodb-session")(session);
 const cors = require("cors");
 const ioServer = require("socket.io");
 const { createAdapter } = require("@socket.io/mongo-adapter");
+const { Emitter } = require("@socket.io/mongo-emitter");
 const { MongoClient } = require("mongodb");
 const http = require("http");
 const { v4: uuid } = require("uuid");
@@ -13,6 +14,7 @@ const crypto = require("crypto");
 const renderMetadata = require("./utilities/renderMetadata");
 const renderSite = require("./utilities/renderSite");
 const { client } = require("./db");
+const h = require("./utilities/helpers");
 
 /**
  * Every user connects with an instance ID and session id
@@ -66,6 +68,9 @@ const sessionConfig = {
 const sessionObj = session(sessionConfig);
 app.use(sessionObj);
 
+app.use(renderMetadata);
+app.use(express.static(__dirname + "/public", { index: false }));
+
 const io = ioServer(server, {
   cors: true,
 });
@@ -74,38 +79,37 @@ const socketClient = new MongoClient(mongoUrl);
 
 (async () => {
   await socketClient.connect();
-  io.adapter(
-    createAdapter(socketClient.db("sessionServer").collection("sockets"))
-  );
+  const socketCollection = socketClient
+    .db("sessionServer")
+    .collection("sockets");
+  io.adapter(createAdapter(socketCollection));
+  const emitter = new Emitter(socketCollection);
 
   app.use(async (req, res, next) => {
     const db = socketClient.db("sessionServer");
+    const hostname = h.parseHost(req.hostname);
     try {
-      if (!req.session[req.hostname]?.instanceID) {
+      if (!req.session[hostname]?.instanceID) {
         const instanceInfo = await db
           .collection("instances")
-          .findOne({ domain: req.hostname });
+          .findOne({ domain: hostname });
         if (!instanceInfo) return res.sendStatus(404);
-        req.session[req.hostname].instanceID = instanceInfo.instanceID;
+        req.session[hostname] = {
+          instanceID: instanceInfo.instanceID,
+        };
       }
       if (!req.session.sessionID) req.session.sessionID = uuid();
-      if (!req.session[req.hostname].theme)
-        req.session[req.hostname].theme = "default";
-      if (!req.session[req.hostname].nsfwAccepted)
-        req.session[req.hostname].nsfwAccepted = false;
-      if (!req.session[req.hostname].notifications)
-        req.session[req.hostname].notifications = [];
-      if (!req.session[req.hostname].unreadMessages)
-        req.session[req.hostname].unreadMessages = [];
-      if (!req.session[req.hostname].emissionsCollected)
-        req.session[req.hostname].emissionsCollected = [];
-      if (
-        !req.session[req.hostname].userInfo &&
-        !req.session[req.hostname].tempID
-      )
-        req.session[req.hostname].tempID = crypto
-          .randomBytes(8)
-          .toString("hex");
+      if (!req.session[hostname].theme) req.session[hostname].theme = "default";
+      if (!req.session[hostname].nsfwAccepted)
+        req.session[hostname].nsfwAccepted = false;
+      if (!req.session[hostname].notifications)
+        req.session[hostname].notifications = [];
+      if (!req.session[hostname].unreadMessages)
+        req.session[hostname].unreadMessages = [];
+      if (!req.session[hostname].emissionsCollected)
+        req.session[hostname].emissionsCollected = [];
+      if (!req.session[hostname].userInfo && !req.session[hostname].tempID)
+        req.session[hostname].tempID = crypto.randomBytes(8).toString("hex");
 
       next();
     } catch (err) {
@@ -122,10 +126,12 @@ const socketClient = new MongoClient(mongoUrl);
 
   app.post("/socket-emit", (req, res) => {
     try {
-      if (req.body.socketKey === process.env.SOCKET_KEY)
-        io.to(req.body.to + "卐卐卐卐" + req.body.instanceID).emit(
-          ...req.body.emit
-        );
+      if (req.body.socketKey !== process.env.SOCKET_KEY)
+        return res.sendStatus(401);
+
+      emitter
+        .to(req.body.to + "卐卐卐卐" + req.body.instanceID)
+        .emit(...req.body.emit);
       res.sendStatus(200);
     } catch (err) {
       console.log("Socket emit error", err);
@@ -135,11 +141,14 @@ const socketClient = new MongoClient(mongoUrl);
 
   app.post("/socket-bulk", (req, res) => {
     try {
+      if (req.body.socketKey !== process.env.SOCKET_KEY)
+        return res.sendStatus(401);
+
       req.body.recipients.forEach((recipient) => {
         try {
-          io.to(req.body.to + "卐卐卐卐" + req.body.instanceID).emit(
-            ...req.body.emit
-          );
+          emitter
+            .to(req.body.to + "卐卐卐卐" + req.body.instanceID)
+            .emit(...req.body.emit);
         } catch (err) {
           console.log("Error emitting to recipient", err);
           console.log(recipient);
@@ -151,8 +160,430 @@ const socketClient = new MongoClient(mongoUrl);
     }
   });
 
-  app.use(renderMetadata);
-  app.use(express.static(__dirname + "/public", { index: false }));
+  app.post("/increment-viewers", async (req, res) => {
+    try {
+      if (req.body.socketKey !== process.env.SOCKET_KEY)
+        return res.sendStatus(401);
+
+      const suffix = "卐卐卐卐" + req.body.instanceID;
+      const viewers = io.sockets.adapter.rooms.get(req.body.userID + suffix);
+      if (viewers?.size) {
+        await client
+          .db(req.body.instanceID)
+          .collection("emissions")
+          .updateOne(
+            {
+              emissionID: req.body.emissionID,
+            },
+            {
+              $inc: {
+                views: viewers.size,
+              },
+            }
+          );
+      }
+      res.sendStatus(200);
+    } catch (err) {
+      console.log("increment viewers error", err);
+      res.sendStatus(500);
+    }
+  });
+
+  app.post("/hashtag", async (req, res) => {
+    try {
+      if (req.body.socketKey !== process.env.SOCKET_KEY)
+        return res.sendStatus(401);
+
+      const suffix = "卐卐卐卐" + req.body.instanceID;
+      for (let h = 0; h < req.body.hashtags.length; h++) {
+        const tag =
+          req.body.hashtags[h]
+            .split("/")[0]
+            .replace(/^[\W_]+/g, "")
+            .toLowerCase() + "卐卐";
+        const tagAttendees = Array.from(
+          io.sockets.adapter.rooms.get(tag) || []
+        );
+        const sessionsAffected = Array.from(io.sockets.sockets)
+          .filter((s) => tagAttendees.indexOf(s[0]) > -1)
+          .map((s) => s[1].request.sessionID);
+
+        await client
+          .db("sessionServer")
+          .collection("sessions")
+          .updateMany(
+            {
+              _id: {
+                $in: sessionsAffected,
+              },
+            },
+            {
+              $push: {
+                [`session.${req.body.instanceID}.emissionsCollected`]:
+                  emission.emissionID,
+              },
+            }
+          );
+
+        emitter.to(tag + suffix).emit("new-emission", emission);
+      }
+      res.sendStatus(200);
+    } catch (err) {
+      console.log("hashtag error", err);
+      res.sendStatus(500);
+    }
+  });
+
+  app.post("/new-signalboost", async (req, res) => {
+    try {
+      if (req.body.socketKey !== process.env.SOCKET_KEY)
+        return res.sendStatus(401);
+
+      let emission = req.body.emission;
+      const host = req.body.host;
+      emission.signalBoost.userLikes = h.getUserLikes(
+        io,
+        emission.signalBoost,
+        host
+      );
+      await client
+        .db("sessionServer")
+        .collection("sessions")
+        .updateMany(
+          {
+            [`session.${host}.profile`]: req.body.userID,
+          },
+          {
+            $push: {
+              [`session.${host}.emissionsCollected`]: emission.emissionID,
+            },
+          }
+        );
+      const suffix = "卐卐卐卐" + req.body.instanceID;
+      emitter.to(req.body.username + suffix).emit("new-emission", {
+        ...emission,
+        ignoreSelf: true,
+      });
+    } catch (err) {
+      console.log("New signalboost error", err);
+      res.sendStatus(500);
+    }
+  });
+
+  app.post("/like-by-userid", async (req, res) => {
+    try {
+      if (req.body.socketKey !== process.env.SOCKET_KEY)
+        return res.sendStatus(401);
+
+      let emission = req.body.emission;
+      emission.userLikes = h.getUserLikes(io, emission, req.body.host);
+
+      if (emission.signalBoost) {
+        emission.signalBoost = await client
+          .db(req.body.instanceID)
+          .collection("emissions")
+          .aggregate([
+            {
+              $lookup: {
+                from: "users",
+                localField: "userID",
+                foreignField: "_id",
+                as: "userInfo",
+              },
+            },
+            {
+              $unwind: "$userInfo",
+            },
+            {
+              $match: {
+                emissionID: emission.signalBoost,
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                replyID: 1,
+                threadID: 1,
+                emissionID: 1,
+                signalBoost: 1,
+                files: 1,
+                html: 1,
+                pollID: 1,
+                userID: 1,
+                username: 1,
+                timestamp: 1,
+                likes: 1,
+                signalBoosts: 1,
+                replies: 1,
+                avatar: "$userInfo.avatar",
+                displayName: "$userInfo.displayName",
+                remove: 1,
+              },
+            },
+          ])
+          .toArray();
+        emission.signalBoost = emission.signalBoost[0];
+        emission.signalBoost.userLikes = h.getUserLikes(
+          io,
+          emission.signalBoost,
+          req.body.host
+        );
+      }
+
+      const sessionsAffected = await client
+        .db("sessionServer")
+        .collection("sessions")
+        .find({
+          [`session.${req.body.host}.emissionsCollected`]: emission.emissionID,
+          $or: [
+            {
+              [`session.${req.body.host}.tempID`]: {
+                $ne: null,
+              },
+            },
+            {
+              [`session.${req.body.host}.userInfo`]: {
+                $ne: null,
+              },
+            },
+          ],
+        })
+        .toArray();
+      const usersAffected = h.getUsersAffected(sessionsAffected, req.body.host);
+      const suffix = "卐卐卐卐" + req.body.instanceID;
+      usersAffected
+        .map((user) => {
+          if (user.session[req.body.host].userInfo)
+            return user.session[req.body.host].userInfo._id;
+          return user.session[req.body.host].tempID;
+        })
+        .forEach((recipient) => {
+          emitter.to(recipient + suffix).emit("like", {
+            emissionID: req.body.emissionID,
+            userID: req.body.userID,
+            value: req.body.alreadyLiked,
+            emission: emission,
+          });
+        });
+      res.status(200).json({
+        emission: emission,
+      });
+    } catch (err) {
+      console.log("Like by userid error", err);
+      res.sendStatus(500);
+    }
+  });
+
+  app.post("/pin-unpin", async (req, res) => {
+    try {
+      if (req.body.socketKey !== process.env.SOCKET_KEY)
+        return res.sendStatus(401);
+      let emission = req.body.emission;
+      emission.userLikes = h.getUserLikes(io, emission, req.body.host);
+      if (emission.pollID)
+        emission.pollData = await c.getPollData(io, emission);
+      if (emission.signalBoost) {
+        emission.signalBoost.userLikes = h.getUserLikes(
+          io,
+          emission.signalBoost,
+          req.body.host
+        );
+        if (emission.signalBoost.pollID)
+          emission.signalBoost.pollData = await c.getPollData(
+            io,
+            emission.signalBoost
+          );
+      }
+
+      if (emission.replyEmission) {
+        emission.replyEmission.userLikes = h.getUserLikes(
+          io,
+          emission.replyEmission,
+          req.body.host
+        );
+        if (emission.replyEmission.pollID)
+          emission.replyEmission.pollData = await c.getPollData(
+            io,
+            emission.replyEmission
+          );
+        if (emission.replyEmission.signalBoost) {
+          emission.replyEmission.signalBoost.userLikes = h.getUserLikes(
+            io,
+            emission.replyEmission.signalBoost,
+            req.body.host
+          );
+          if (emission.replyEmission.signalBoost.pollID)
+            emission.replyEmission.signalBoost.pollData = await c.getPollData(
+              io,
+              emission.replyEmission.signalBoost
+            );
+        }
+        if (emission.replyEmission.replyEmission) {
+          emission.replyEmission.replyEmission.userLikes = h.getUserLikes(
+            io,
+            emission.replyEmission.replyEmission,
+            req.body.host
+          );
+          if (emission.replyEmission.replyEmission.pollID)
+            emission.replyEmission.replyEmission.pollData = await c.getPollData(
+              io,
+              emission.replyEmission.replyEmission
+            );
+          if (emission.replyEmission.replyEmission.signalBoost) {
+            emission.replyEmission.replyEmission.signalBoost.userLikes =
+              h.getUserLikes(
+                io,
+                emission.replyEmission.replyEmission.signalBoost,
+                req.body.host
+              );
+            if (emission.replyEmission.replyEmission.signalBoost.pollID)
+              emission.replyEmission.replyEmission.signalBoost.pollData =
+                await c.getPollData(
+                  io,
+                  emission.replyEmission.replyEmission.signalBoost
+                );
+          }
+        }
+      }
+
+      await client
+        .db("sessionServer")
+        .collection("sessions")
+        .updateMany(
+          {
+            [`session.${req.body.host}.profile`]: req.body.userID,
+          },
+          {
+            $push: {
+              [`session.${req.body.host}.emissionsCollected`]:
+                emission.emissionID,
+            },
+          }
+        );
+      const suffix = "卐卐卐卐" + req.body.instanceID;
+      emitter.to(req.body.userID + suffix).emit("pin", emission);
+      res.status(200).json({
+        updatedEmission: emission,
+      });
+    } catch (err) {
+      console.log("Pin unpin error", err);
+      res.sendStatus(500);
+    }
+  });
+
+  app.post("/post-reply", async (req, res) => {
+    try {
+      let emission = req.body.emission;
+      const sessionDB = client.db("sessionServer");
+      emission.replyEmission.userLikes = h.getUserLikes(
+        io,
+        emission.replyEmission,
+        req.body.host
+      );
+      if (emission.replyEmission.pollID)
+        emission.replyEmission.pollData = await c.getPollData(
+          io,
+          emission.replyEmission
+        );
+      if (emission.replyEmission.signalBoost) {
+        emission.replyEmission.signalBoost.userLikes = h.getUserLikes(
+          io,
+          emission.replyEmission.signalBoost,
+          req.body.host
+        );
+        if (emission.replyEmission.signalBoost.pollID)
+          emission.replyEmission.signalBoost.pollData = await c.getPollData(
+            io,
+            emission.replyEmission.signalBoost
+          );
+      }
+      if (emission.replyEmission.replyEmission) {
+        emission.replyEmission.replyEmission.userLikes = h.getUserLikes(
+          io,
+          emission.replyEmission.replyEmission,
+          req.body.host
+        );
+        if (emission.replyEmission.replyEmission.pollID)
+          emission.replyEmission.replyEmission.pollData = await c.getPollData(
+            io,
+            emission.replyEmission.replyEmission
+          );
+        if (emission.replyEmission.replyEmission.signalBoost) {
+          emission.replyEmission.replyEmission.signalBoost.userLikes =
+            h.getUserLikes(
+              io,
+              emission.replyEmission.replyEmission.signalBoost,
+              req.body.host
+            );
+          if (emission.replyEmission.replyEmission.signalBoost.pollID)
+            emission.replyEmission.replyEmission.signalBoost.pollData =
+              await c.getPollData(
+                io,
+                emission.replyEmission.replyEmission.signalBoost
+              );
+        }
+      }
+      await sessionDB.collection("sessions").updateMany(
+        {
+          [`session.${req.body.host}.profile`]: emission.userID,
+        },
+        {
+          $push: {
+            [`session.${req.body.host}.emissionsCollected`]:
+              emission.emissionID,
+          },
+        }
+      );
+      const sessionsAffected = await sessionDB
+        .collection("sessions")
+        .find({
+          [`session.${req.body.host}.emissionsCollected`]: req.body.replyID,
+          $or: [
+            {
+              [`session.${req.body.host}.tempID`]: {
+                $ne: null,
+              },
+            },
+            {
+              [`session.${req.body.host}.userInfo`]: {
+                $ne: null,
+              },
+            },
+          ],
+        })
+        .toArray();
+      const usersAffected = h.getUsersAffected(sessionsAffected, req.body.host);
+      const newEmissionRecipients = [];
+      const replyRecipients = [];
+
+      usersAffected.forEach((user) => {
+        if (user.session[req.body.host].userInfo) {
+          replyRecipients.push(user.session[req.body.host].userInfo._id);
+          if (user.session[req.body.host].profile === emission.userID)
+            newEmissionRecipients.push(
+              user.session[req.body.host].userInfo._id
+            );
+        } else {
+          replyRecipients.push(user.session[req.body.host].tempID);
+          if (user.session[req.body.host].profile === emission.userID)
+            newEmissionRecipients.push(user.session[req.body.host].tempID);
+        }
+      });
+      const suffix = "卐卐卐卐" + req.body.instanceID;
+      replyRecipients.forEach((recipient) => {
+        emitter.to(recipient + suffix).emit("reply", req.body.replyID);
+      });
+      newEmissionRecipients.forEach((recipient) => {
+        emitter.to(recipient + suffix).emit("new-emission", emission);
+      });
+      res.status(200).json({
+        emission: emission,
+      });
+    } catch (err) {
+      console.log("Post reply error", err);
+      res.sendStatus(500);
+    }
+  });
 
   app.get("*", async (req, res) => {
     try {

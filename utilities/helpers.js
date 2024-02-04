@@ -286,6 +286,17 @@ h.processUsers = (users, req) => {
   });
 };
 
+h.parseHost = (host) =>
+  host
+    .replace("http://", "")
+    .replace("https://", "")
+    .split(":")[0]
+    .split("/")
+    .join("")
+    .toLowerCase()
+    .split(".")
+    .join("卐");
+
 /**
  *
  * @param {String} html - HTML string
@@ -446,19 +457,43 @@ h.sanitizeHTML = (html) => {
  * @param {Object} emission - Emissions document
  * @returns Array of User _ids of users that like the emission
  */
-h.getUserLikes = (io, emission) => {
+h.getUserLikes = (io, emission, host) => {
   return Object.keys(io.engine.clients)
     .filter((key) => {
       return (
-        io.engine.clients[key].request &&
-        io.engine.clients[key].request.session &&
-        io.engine.clients[key].request.session.userInfo &&
-        io.engine.clients[key].request.session.userInfo.likes.indexOf(
+        io.engine.clients[key].request.session[host] &&
+        io.engine.clients[key].request.session[host]?.userInfo?.likes?.indexOf(
           emission.emissionID
         ) > -1
       );
     })
     .map((key) => io.engine.clients[key].request.session.userInfo._id);
+};
+
+h.getUsersAffected = (sessionsAffected, host) => {
+  const usersAffected = [];
+
+  sessionsAffected.forEach((s) => {
+    if (s.session.userInfo) {
+      if (
+        !usersAffected.find(
+          (u) =>
+            u.session[host].userInfo &&
+            u.session[host].userInfo._id === s.session[host].userInfo._id
+        )
+      )
+        usersAffected.push(s);
+    } else {
+      if (
+        !usersAffected.find(
+          (u) => u.session[host].tempID === s.session[host].tempID
+        )
+      )
+        usersAffected.push(s);
+    }
+  });
+
+  return usersAffected;
 };
 
 /**
