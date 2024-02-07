@@ -27,14 +27,6 @@ const socketHandler = (io, socket) => {
   }
   host = h.parseHost(host);
   const suffix = "卐卐卐卐" + socket.request.session[host].instanceID;
-  console.log(socket.request.session[host]);
-  console.log("New connection");
-  console.log("join", socket.handshake.query.join);
-  console.log(
-    "session",
-    socket.request.session[host].userInfo?._id ||
-      socket.request.session[host].tempID
-  );
 
   socket.join(socket.handshake.query.join + suffix);
   socket.join(

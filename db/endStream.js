@@ -12,25 +12,24 @@ const connect = require("./connect");
 
 const template = (options) => {
   const { instanceID, userID } = options;
-  return new Promise(async (resolve, reject) =>
-    connect(instanceID, async (db) => {
-      try {
-        await db.collection("users").updateOne(
-          {
-            _id: userID,
+  return new Promise(async (resolve, reject) => {
+    try {
+      const db = client.db(instanceID);
+      await db.collection("users").updateOne(
+        {
+          _id: userID,
+        },
+        {
+          $set: {
+            live: false,
           },
-          {
-            $set: {
-              live: false,
-            },
-          }
-        );
-        resolve();
-      } catch (err) {
-        reject(err);
-      }
-    })
-  );
+        }
+      );
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
+  });
 };
 
 module.exports = template;
