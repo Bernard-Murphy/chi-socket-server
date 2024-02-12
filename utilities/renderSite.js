@@ -2,13 +2,14 @@ const fs = require("fs");
 const path = require("path");
 const { getInstanceInfo } = require("../db");
 const h = require("./helpers");
+const crypto = require("crypto");
 
 const renderSite = async (req, res) => {
   let html = "";
   const hostname = h.parseHost(req.hostname);
   if (!req.session[hostname]) req.session[hostname] = {};
   try {
-    const instanceID = process.env.DATABASE;
+    const instanceID = req.session[hostname].instanceID;
     const instanceInfo = await getInstanceInfo({ hostname, instanceID });
     html = fs
       .readFileSync(path.join(__dirname, "..", "public", "index.html"))
@@ -35,18 +36,38 @@ const renderSite = async (req, res) => {
       .join(instanceInfo.preferences.app_name);
     html = html
       .split("卐卐description卐卐")
-      .join(instanceInfo.preferences.description);
+      .join(instanceInfo.preferences.description)
+      .split("卐")
+      .join("");
+    const metadata = {
+      token: crypto
+        .publicEncrypt(
+          process.env.PUBLIC_KEY,
+          JSON.stringify({
+            sessionID: req.session.sessionID,
+            token: req.session[hostname].tokens.sort(
+              (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+            )[0].token,
+          })
+        )
+        .toString("hex"),
+    };
+
     if (req.session[hostname].userInfo) {
       req.session[hostname].theme =
         req.session[hostname].userInfo.userSettings.theme;
-      html += `<p id="user-info-server" class="d-none m-0">${JSON.stringify({
+      metadata.userInfo = {
         ...h.returnClientUserInfo(req.session[hostname].userInfo),
         unreadMessages: req.session[hostname].unreadMessages,
         notifications: req.session[hostname].notifications,
         bio: html2json(req.session[hostname].userInfo.bio),
-      })}</p>`;
-    } else html += '<p id="p-metadata" class="d-none m-0"></p>';
+      };
+    }
+    html += `<p id="jizzer-metadata" class="d-none m-0 p-0 w-0 h-0 border-none">${JSON.stringify(
+      metadata
+    )}</p>`;
     if (!req.session[hostname].theme) req.session[hostname].theme = "default";
+    metadata.theme = req.session[hostname].theme;
     if (req.session[hostname].theme !== "default") {
       html = html.replace(
         "/styles/default.css",

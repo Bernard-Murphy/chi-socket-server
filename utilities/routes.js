@@ -3,16 +3,14 @@ const { MongoClient } = require("mongodb");
 const h = require("./helpers");
 const c = require("./longCalls");
 
-const mongoUrl = encodeURIComponent(
+const mongoUrl =
   "mongodb+srv://" +
-    process.env.MONGO_USER +
-    ":" +
-    process.env.MONGO_PASSWORD +
-    "@" +
-    process.env.MONGO_HOST +
-    "/?retryWrites=true&w=majority"
-);
-
+  process.env.MONGO_USER +
+  ":" +
+  encodeURIComponent(process.env.MONGO_PASSWORD) +
+  "@" +
+  process.env.MONGO_HOST +
+  "/?retryWrites=true&w=majority";
 const client = new MongoClient(mongoUrl);
 
 routes.post("/increment-viewers", async (req, res) => {
