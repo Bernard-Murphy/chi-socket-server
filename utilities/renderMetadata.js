@@ -30,9 +30,45 @@ const renderMetadata = async (req, res, next) => {
       const filePath = path.join(__dirname, "..", "public", req.url);
       let fileData = fs.readFileSync(filePath)?.toString();
       if (fileData) {
-        const instanceID = process.env.DATABASE;
         const hostname = h.parseHost(req.hostname);
-        const instanceInfo = await getInstanceInfo({ hostname, instanceID });
+        const instanceInfo = await getInstanceInfo({ hostname });
+
+        fileData = fileData
+          .split("卐卐max_individual_file_size卐卐")
+          .join(
+            Math.round(
+              Number(instanceInfo.preferences.max_individual_file_size) *
+                1024 *
+                1024
+            )
+          );
+
+        fileData = fileData
+          .split("卐卐max_total_file_size卐卐")
+          .join(
+            Math.round(
+              Number(instanceInfo.preferences.max_total_file_size) * 1024 * 1024
+            )
+          );
+        fileData = fileData
+          .split(
+            "\\u5350\\u5350" + "max_individual_file_size" + "\\u5350\\u5350"
+          )
+          .join(
+            Math.round(
+              Number(instanceInfo.preferences.max_individual_file_size) *
+                1024 *
+                1024
+            )
+          );
+
+        fileData = fileData
+          .split("\\u5350\\u5350" + "max_total_file_size" + "\\u5350\\u5350")
+          .join(
+            Math.round(
+              Number(instanceInfo.preferences.max_total_file_size) * 1024 * 1024
+            )
+          );
 
         Object.keys(instanceInfo.preferences)
           .filter((key) => key !== "gigachad")

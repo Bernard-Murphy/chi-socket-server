@@ -9,8 +9,7 @@ const renderSite = async (req, res) => {
   const hostname = h.parseHost(req.hostname);
   if (!req.session[hostname]) req.session[hostname] = {};
   try {
-    const instanceID = req.session[hostname].instanceID;
-    const instanceInfo = await getInstanceInfo({ hostname, instanceID });
+    const instanceInfo = await getInstanceInfo({ hostname });
     html = fs
       .readFileSync(path.join(__dirname, "..", "public", "index.html"))
       .toString();
@@ -36,18 +35,14 @@ const renderSite = async (req, res) => {
       .join(instanceInfo.preferences.app_name);
     html = html
       .split("卐卐description卐卐")
-      .join(instanceInfo.preferences.description)
-      .split("卐")
-      .join("");
+      .join(instanceInfo.preferences.description);
+
     const metadata = {
       token: crypto
         .publicEncrypt(
           process.env.PUBLIC_KEY,
           JSON.stringify({
             sessionID: req.session.sessionID,
-            token: req.session[hostname].tokens.sort(
-              (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-            )[0].token,
           })
         )
         .toString("hex"),
@@ -81,6 +76,7 @@ const renderSite = async (req, res) => {
   } catch (err) {
     console.log("Error rendering site", err);
   }
+  html = html.split("卐").join("");
   res.status(200).send(html);
 };
 

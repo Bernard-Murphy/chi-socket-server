@@ -24,7 +24,7 @@ process.env.PRIVATE_KEY = fs.readFileSync(__dirname + "/privateKey.key");
  * req.session pulled from instance session store
  */
 
-let tokensToDelete = [];
+let expiredTokens = [];
 
 const mongoUrl =
   "mongodb+srv://" +
@@ -42,6 +42,7 @@ const port = process.env.PORT;
 
 const app = express();
 app.use(cors());
+app.use(express.json());
 const server = http.createServer(app);
 
 // Set up cookies
@@ -79,6 +80,10 @@ app.use(express.static(__dirname + "/public", { index: false }));
 const io = ioServer(server, {
   cors: true,
 });
+// Wrap socket with express-session object so that socket can access user session info
+const wrapSocketMiddleware = (middleware) => (socket, next) =>
+  middleware(socket.request, {}, next);
+io.use(wrapSocketMiddleware(sessionObj)); // Session object can be accessed by websockets
 
 const socketClient = new MongoClient(mongoUrl);
 
@@ -90,44 +95,45 @@ const socketClient = new MongoClient(mongoUrl);
   io.adapter(createAdapter(socketCollection));
   const emitter = new Emitter(socketCollection);
 
-  const removeExpiredTokens = async () => {
+  const expireTokens = async () => {
     try {
-      const tokens = tokensToDelete.filter(
+      const tokensToExpire = expiredTokens.filter(
         (token) =>
-          new Date() >= new Date(new Date().setDate(new Date(token.timestamp)))
+          new Date() >
+          new Date(token.timestamp).setSeconds(
+            new Date(token.timestamp).getSeconds() + 15
+          )
       );
-      if (tokens.length) {
-        const update = await socketClient
+      if (tokensToExpire.length) {
+        await socketClient
           .db("sessionServer")
           .collection("sessions")
-          .updateMany(
-            {
-              "session.$[].tokens.token": {
-                $in: tokens.map((token) => token.token),
-              },
-            },
-            {
-              $pull: {
-                "session.$[].tokens.token": {
-                  token: {
-                    $in: tokens.map((token) => token.token),
+          .bulkWrite(
+            tokensToExpire.map((token) => ({
+              updateOne: {
+                filter: {
+                  "session.sessionID": token.sessionID,
+                },
+                update: {
+                  $push: {
+                    [`session.${token.host}.expiredTokens`]: token.token,
                   },
                 },
               },
-            }
+            }))
           );
-        tokensToDelete = tokensToDelete.filter(
-          (token) => !tokens.find((t) => t.token === token.token)
+        expiredTokens = expiredTokens.filter(
+          (token) => !tokensToExpire.find((t) => t.token === token.token)
         );
-        console.log("deleted", update, tokens.length);
       }
+
+      setTimeout(expireTokens, 5000);
     } catch (err) {
-      console.log("Remove expired tokens error", err);
+      console.log("expireTokens error", err);
     }
-    setTimeout(removeExpiredTokens, 15000);
   };
 
-  removeExpiredTokens();
+  expireTokens();
 
   app.use(async (req, res, next) => {
     try {
@@ -148,20 +154,6 @@ const socketClient = new MongoClient(mongoUrl);
         }
         if (!req.session.sessionID) req.session.sessionID = uuid();
 
-        if (!req.session[hostname].tokens) req.session[hostname].tokens = [];
-        if (req.session[hostname].tokens.length)
-          req.session[hostname].tokens.forEach((token) =>
-            tokensToDelete.push({
-              token: token.token,
-              timestamp: new Date(),
-            })
-          );
-        req.session[hostname].tokens.push({
-          token: uuid(),
-          timestamp: new Date(),
-        });
-        console.log("tokens", req.session[hostname].tokens);
-        console.log("to delete", tokensToDelete);
         if (!req.session[hostname].theme)
           req.session[hostname].theme = "default";
         if (!req.session[hostname].nsfwAccepted)
@@ -191,9 +183,6 @@ const socketClient = new MongoClient(mongoUrl);
             process.env.PUBLIC_KEY,
             JSON.stringify({
               sessionID: req.session.sessionID,
-              token: req.session[hostname].tokens.sort(
-                (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-              )[0].token,
             })
           )
           .toString("hex"),
@@ -216,17 +205,6 @@ const socketClient = new MongoClient(mongoUrl);
     } catch (err) {
       console.log("/no-token error", err);
       res.sendStatus(200);
-    }
-  });
-
-  app.post("/remove-expired-tokens", (req, res) => {
-    try {
-      if (typeof req.body.token === "string")
-        tokensToDelete.push(req.body.token);
-      res.sendStatus(200);
-    } catch (err) {
-      console.log("/remove-expired-tokens error", err);
-      res.sendStatus(500);
     }
   });
 
@@ -266,8 +244,26 @@ const socketClient = new MongoClient(mongoUrl);
           console.log(recipient);
         }
       });
+      res.sendStatus(200);
     } catch (err) {
       console.log("Socket bulk error", err);
+      res.sendStatus(500);
+    }
+  });
+
+  app.post("/expire-token", (req, res) => {
+    try {
+      if (req.body.socketKey !== process.env.SOCKET_KEY)
+        return res.sendStatus(401);
+      expiredTokens.push({
+        timestamp: new Date(),
+        sessionID: req.body.sessionID,
+        token: req.body.token,
+        host: req.body.host,
+      });
+      res.sendStatus(200);
+    } catch (err) {
+      console.log("/expire-token error", err);
       res.sendStatus(500);
     }
   });

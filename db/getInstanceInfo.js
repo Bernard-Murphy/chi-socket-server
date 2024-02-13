@@ -11,14 +11,13 @@ const connect = require("./connect");
  */
 
 const getInstanceInfo = (options) => {
-  const { hostname, instanceID } = options;
+  const { hostname } = options;
   return new Promise(async (resolve, reject) =>
-    connect(instanceID, async (db) => {
+    connect("sessionServer", async (db) => {
       try {
         const instanceInfo = await db
           .collection("instances")
-          // .findOne({ domain: hostname });
-          .findOne({ _id: "e133a531e75df8cc" });
+          .findOne({ domain: hostname });
         resolve(instanceInfo);
       } catch (err) {
         reject(err);

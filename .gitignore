@@ -3,3 +3,4 @@ package-lock*
 *.key
 *.sh
 public/*
+scripts/*
