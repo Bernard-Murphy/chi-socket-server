@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { getInstanceInfo } = require("../db");
 const h = require("./helpers");
+const { html2json } = require("html2json");
 const crypto = require("crypto");
 
 const renderSite = async (req, res) => {

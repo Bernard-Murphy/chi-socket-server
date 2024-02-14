@@ -15,6 +15,7 @@ const renderMetadata = require("./utilities/renderMetadata");
 const renderSite = require("./utilities/renderSite");
 const routes = require("./utilities/routes");
 const h = require("./utilities/helpers");
+const { html2json } = require("html2json");
 
 process.env.PUBLIC_KEY = fs.readFileSync(__dirname + "/publicKey.key");
 process.env.PRIVATE_KEY = fs.readFileSync(__dirname + "/privateKey.key");
