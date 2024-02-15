@@ -252,6 +252,27 @@ const socketClient = new MongoClient(mongoUrl);
     }
   });
 
+  app.post("/socket-notify", (req, res) => {
+    try {
+      if (req.body.socketKey !== process.env.SOCKET_KEY)
+        return res.sendStatus(401);
+
+      req.body.notifications.forEach((notification) => {
+        try {
+          emitter
+            .to(notification.userID + "卐卐卐卐" + req.body.instanceID)
+            .emit("notification", notification);
+        } catch (err) {
+          console.log("Error emitting to recipient", err);
+          console.log(recipient);
+        }
+      });
+    } catch (err) {
+      console.log("/socket-notify error", err);
+      res.sendStatus(500);
+    }
+  });
+
   app.post("/expire-token", (req, res) => {
     try {
       if (req.body.socketKey !== process.env.SOCKET_KEY)
