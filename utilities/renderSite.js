@@ -48,7 +48,7 @@ const renderSite = async (req, res) => {
         )
         .toString("hex"),
     };
-
+    console.log(req.session[hostname]);
     if (req.session[hostname].userInfo) {
       req.session[hostname].theme =
         req.session[hostname].userInfo.userSettings.theme;
@@ -59,6 +59,14 @@ const renderSite = async (req, res) => {
         bio: html2json(req.session[hostname].userInfo.bio),
       };
     }
+
+    if (req.session[hostname].verificationEmail) {
+      metadata.verificationDetails = {
+        timestamp: req.session[hostname].verificationTimestamp,
+        email: req.session[hostname].verificationEmail,
+      };
+    }
+
     html += `<p id="jizzer-metadata" class="d-none m-0 p-0 w-0 h-0 border-none">${JSON.stringify(
       metadata
     )}</p>`;

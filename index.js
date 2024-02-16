@@ -153,6 +153,11 @@ const socketClient = new MongoClient(mongoUrl);
             instanceID: instanceInfo.instanceID,
           };
         }
+        if (
+          req.session[hostname].verificationEmail &&
+          !req.session[hostname].verificationTimestamp
+        )
+          req.session[hostname].verificationTimestamp = new Date();
         if (!req.session.sessionID) req.session.sessionID = uuid();
 
         if (!req.session[hostname].theme)
@@ -197,6 +202,13 @@ const socketClient = new MongoClient(mongoUrl);
           unreadMessages: req.session[hostname].unreadMessages,
           notifications: req.session[hostname].notifications,
           bio: html2json(req.session[hostname].userInfo.bio),
+        };
+      }
+
+      if (req.session[hostname].verificationEmail) {
+        metadata.verificationDetails = {
+          timestamp: req.session[hostname].verificationTimestamp,
+          email: req.session[hostname].verificationEmail,
         };
       }
 
