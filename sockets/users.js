@@ -17,7 +17,8 @@ const client = new MongoClient(mongoUrl);
 const userSocket = async (io, socket, host, suffix) => {
   try {
     const userID = socket.request.session[host].userInfo?._id;
-    const username = socket.request.session[host].userInfo?.username + "卐";
+    const username =
+      socket.request.session[host].userInfo?.username.toLowerCase() + "卐";
     const instanceID = socket.request.session[host].instanceID;
     const room = socket.handshake.query.join;
     let streamSocket;

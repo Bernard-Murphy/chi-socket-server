@@ -302,7 +302,7 @@ const socketClient = new MongoClient(mongoUrl);
     }
   });
 
-  app.use("/", routes);
+  app.use("/", routes(io, emitter));
 
   app.get("*", async (req, res) => {
     try {
