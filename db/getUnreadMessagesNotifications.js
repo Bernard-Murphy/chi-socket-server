@@ -34,8 +34,6 @@ const getUnreadMessagesNotifications = (options) => {
             userID: userID,
             unread: true,
           });
-        console.log("notifications", notifications);
-        console.log("unread", unreadMessages);
         resolve({ notifications, unreadMessages });
       } catch (err) {
         reject(err);

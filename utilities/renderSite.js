@@ -26,7 +26,9 @@ const renderSite = async (req, res) => {
                 "/" +
                 instanceInfo.instanceID +
                 "/"
-            );
+            )
+            .split('"卐_skip_卐/')
+            .join('"/');
         }
         return slice;
       })
@@ -48,7 +50,6 @@ const renderSite = async (req, res) => {
         )
         .toString("hex"),
     };
-    console.log(req.session[hostname]);
     if (req.session[hostname].userInfo) {
       req.session[hostname].theme =
         req.session[hostname].userInfo.userSettings.theme;

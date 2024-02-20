@@ -187,15 +187,15 @@ h.verifyCaptcha = (token) => {
   });
 };
 
-h.checkJanny = (req) => {
+h.checkJanny = (req, host) => {
   /**
    * Checks to see whether the user is an administrator
    */
   if (
     req.session &&
-    req.session.userInfo &&
-    ["Chadmin", "Janny"].indexOf(req.session.userInfo.role) !== -1 &&
-    !req.session.userInfo.disabled
+    req.session[host].userInfo &&
+    ["Chadmin", "Janny"].indexOf(req.session[host].userInfo.role) !== -1 &&
+    !req.session[host].userInfo.disabled
   )
     return true;
   else return false;
@@ -224,12 +224,12 @@ h.checkChadmin_userInfo = (userInfo) => {
 };
 
 // Same as the checkChadmin middleware, but a regular method
-h.checkChadmin = (req) => {
+h.checkChadmin = (req, host) => {
   if (
     req.session &&
-    req.session.userInfo &&
-    req.session.userInfo.role === "Chadmin" &&
-    !req.session.userInfo.disabled
+    req.session[host].userInfo &&
+    req.session[host].userInfo.role === "Chadmin" &&
+    !req.session[host].userInfo.disabled
   )
     return true;
   else return false;
@@ -268,23 +268,6 @@ h.checkHTMLLength = (html) =>
         return [" ", "\n"].indexOf(c) > -1;
       }
     }).length;
-
-h.processUsers = (users, req) => {
-  return users.map((user) => {
-    try {
-      if (req.session?.userInfo) {
-        if (req.session.userInfo.blocked.indexOf(user.user_id) > -1)
-          user.isBlocked = true;
-        if (user.blocked.indexOf(req.session.userInfo.user_id) > -1)
-          user.blocksMe = true;
-      }
-    } catch (err) {
-      console.log("error", err, user);
-    }
-
-    return user;
-  });
-};
 
 h.parseHost = (host) =>
   host
@@ -467,14 +450,14 @@ h.getUserLikes = (io, emission, host) => {
         ) > -1
       );
     })
-    .map((key) => io.engine.clients[key].request.session.userInfo._id);
+    .map((key) => io.engine.clients[key].request.session[host].userInfo._id);
 };
 
 h.getUsersAffected = (sessionsAffected, host) => {
   const usersAffected = [];
 
   sessionsAffected.forEach((s) => {
-    if (s.session.userInfo) {
+    if (s.session[host].userInfo) {
       if (
         !usersAffected.find(
           (u) =>

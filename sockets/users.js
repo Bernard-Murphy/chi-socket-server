@@ -68,7 +68,7 @@ const userSocket = async (io, socket, host, suffix) => {
             ];
             socket.emit("report-count", open.length);
           }
-          if (h.checkChadmin(socket.request)) {
+          if (h.checkChadmin_userInfo(socket.request.session[host].userInfo)) {
             const unreadModLogs = await ModLogs.countDocuments({
               readBy: { $ne: userID },
             });
