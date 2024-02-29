@@ -229,6 +229,7 @@ const socketClient = new MongoClient(mongoUrl);
 
   app.post("/socket-emit", (req, res) => {
     try {
+      // console.log("socket emit", req.body);
       if (req.body.socketKey !== process.env.SOCKET_KEY)
         return res.sendStatus(401);
 
@@ -244,6 +245,7 @@ const socketClient = new MongoClient(mongoUrl);
 
   app.post("/socket-bulk", (req, res) => {
     try {
+      // console.log("socket bulk", req.body);
       if (req.body.socketKey !== process.env.SOCKET_KEY)
         return res.sendStatus(401);
 

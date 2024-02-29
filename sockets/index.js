@@ -29,6 +29,12 @@ const socketHandler = (io, socket) => {
     }
     const suffix = "卐卐卐卐" + socket.request.session[host].instanceID;
 
+    console.log("join", socket.handshake.query.join + suffix);
+    console.log(
+      "join",
+      (socket.request.session[host].userInfo?._id ||
+        socket.request.session[host].tempID) + suffix
+    );
     socket.join(socket.handshake.query.join + suffix);
     socket.join(
       (socket.request.session[host].userInfo?._id ||

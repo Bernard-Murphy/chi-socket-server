@@ -37,7 +37,9 @@ const moduleExports = (io, emitter) => {
             returnDocument: "after",
           }
         );
+
       if (!emission) return res.sendStatus(404);
+      delete emission.headers;
       const signalBoost = emission.signalBoost
         ? await client
             .db(req.body.instanceID)
@@ -56,6 +58,7 @@ const moduleExports = (io, emitter) => {
               }
             )
         : false;
+      if (signalBoost) delete signalBoost.headers;
       res.status(200).json({
         views: emission.views,
         signalBoost: signalBoost?.views,
@@ -248,6 +251,7 @@ const moduleExports = (io, emitter) => {
           ])
           .toArray();
         emission.signalBoost = emission.signalBoost[0];
+        delete emission.signalBoost.headers;
         emission.signalBoost.userLikes = h.getUserLikes(
           io,
           emission.signalBoost,
@@ -275,7 +279,6 @@ const moduleExports = (io, emitter) => {
         })
         .toArray();
       const usersAffected = h.getUsersAffected(sessionsAffected, req.body.host);
-
       usersAffected
         .map((user) => {
           if (user.session[req.body.host].userInfo)
