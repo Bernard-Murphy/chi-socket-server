@@ -144,6 +144,7 @@ const socketClient = new MongoClient(mongoUrl);
       ) {
         const db = socketClient.db("sessionServer");
         const hostname = h.parseHost(req.hostname);
+        console.log(hostname);
         if (!req.session[hostname]?.instanceID) {
           const instanceInfo = await db
             .collection("instances")
