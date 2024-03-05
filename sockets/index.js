@@ -17,6 +17,7 @@ const socketHandler = (io, socket) => {
      * if on profile page, join profile room (username卐)
      * If on tag page, join tag room (tag卐卐)
      */
+    console.log(socket.request.session);
     if (!socket.request?.session) {
       console.log("no session found");
       return;
