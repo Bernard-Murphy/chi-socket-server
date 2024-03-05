@@ -24,6 +24,7 @@ const socketHandler = (io, socket) => {
     }
     let host = socket.request.headers.Referer || socket.request.headers.referer;
     host = h.parseHost(host);
+    console.log("host", host);
     if (!host) {
       console.log("No host", socket.request.headers);
       return;
