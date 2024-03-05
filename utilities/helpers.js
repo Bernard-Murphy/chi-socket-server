@@ -274,8 +274,7 @@ h.parseHost = (host) =>
     .replace("http://", "")
     .replace("https://", "")
     .split(":")[0]
-    .split("/")
-    .join("")
+    .split("/")[0]
     .toLowerCase()
     .split(".")
     .join("卐");
