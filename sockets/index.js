@@ -17,14 +17,12 @@ const socketHandler = (io, socket) => {
      * if on profile page, join profile room (username卐)
      * If on tag page, join tag room (tag卐卐)
      */
-    console.log(socket.request.session);
     if (!socket.request?.session) {
       console.log("no session found");
       return;
     }
     let host = socket.request.headers.Referer || socket.request.headers.referer;
     host = h.parseHost(host);
-    console.log("host", host);
     if (!host) {
       console.log("No host", socket.request.headers);
       return;
