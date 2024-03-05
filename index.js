@@ -78,6 +78,47 @@ app.use(sessionObj);
 app.use(renderMetadata);
 app.use(express.static(__dirname + "/public", { index: false }));
 
+app.use(async (req, res, next) => {
+  try {
+    if (!req.url.includes(".") && !decodeURIComponent(req.url).includes("卐")) {
+      const db = socketClient.db("sessionServer");
+      const hostname = h.parseHost(req.hostname);
+      console.log(hostname);
+      if (!req.session[hostname]?.instanceID) {
+        const instanceInfo = await db
+          .collection("instances")
+          .findOne({ domain: hostname });
+        if (!instanceInfo) return res.sendStatus(404);
+        req.session[hostname] = {
+          instanceID: instanceInfo.instanceID,
+        };
+      }
+      if (
+        req.session[hostname].verificationEmail &&
+        !req.session[hostname].verificationTimestamp
+      )
+        req.session[hostname].verificationTimestamp = new Date();
+      if (!req.session.sessionID) req.session.sessionID = uuid();
+
+      if (!req.session[hostname].theme) req.session[hostname].theme = "default";
+      if (!req.session[hostname].nsfwAccepted)
+        req.session[hostname].nsfwAccepted = false;
+      if (!req.session[hostname].notifications)
+        req.session[hostname].notifications = [];
+      if (!req.session[hostname].unreadMessages)
+        req.session[hostname].unreadMessages = [];
+      if (!req.session[hostname].emissionsCollected)
+        req.session[hostname].emissionsCollected = [];
+      if (!req.session[hostname].userInfo && !req.session[hostname].tempID)
+        req.session[hostname].tempID = crypto.randomBytes(8).toString("hex");
+    }
+    next();
+  } catch (err) {
+    console.log("Entry error", err);
+    res.sendStatus(500);
+  }
+});
+
 const io = ioServer(server, {
   cors: true,
 });
@@ -136,51 +177,6 @@ const socketClient = new MongoClient(mongoUrl);
 
   expireTokens();
 
-  app.use(async (req, res, next) => {
-    try {
-      if (
-        !req.url.includes(".") &&
-        !decodeURIComponent(req.url).includes("卐")
-      ) {
-        const db = socketClient.db("sessionServer");
-        const hostname = h.parseHost(req.hostname);
-        console.log(hostname);
-        if (!req.session[hostname]?.instanceID) {
-          const instanceInfo = await db
-            .collection("instances")
-            .findOne({ domain: hostname });
-          if (!instanceInfo) return res.sendStatus(404);
-          req.session[hostname] = {
-            instanceID: instanceInfo.instanceID,
-          };
-        }
-        if (
-          req.session[hostname].verificationEmail &&
-          !req.session[hostname].verificationTimestamp
-        )
-          req.session[hostname].verificationTimestamp = new Date();
-        if (!req.session.sessionID) req.session.sessionID = uuid();
-
-        if (!req.session[hostname].theme)
-          req.session[hostname].theme = "default";
-        if (!req.session[hostname].nsfwAccepted)
-          req.session[hostname].nsfwAccepted = false;
-        if (!req.session[hostname].notifications)
-          req.session[hostname].notifications = [];
-        if (!req.session[hostname].unreadMessages)
-          req.session[hostname].unreadMessages = [];
-        if (!req.session[hostname].emissionsCollected)
-          req.session[hostname].emissionsCollected = [];
-        if (!req.session[hostname].userInfo && !req.session[hostname].tempID)
-          req.session[hostname].tempID = crypto.randomBytes(8).toString("hex");
-      }
-      next();
-    } catch (err) {
-      console.log("Entry error", err);
-      res.sendStatus(500);
-    }
-  });
-
   app.get("/no-token", (req, res) => {
     try {
       const hostname = h.parseHost(req.hostname);
@@ -222,10 +218,6 @@ const socketClient = new MongoClient(mongoUrl);
     }
   });
 
-  // Wrap socket with express-session object so that socket can access user session info
-  const wrapSocketMiddleware = (middleware) => (socket, next) =>
-    middleware(socket.request, {}, next);
-  io.use(wrapSocketMiddleware(sessionObj)); // Session object can be accessed by websockets
   io.on("connection", (socket) => socketHandler(io, socket));
 
   app.post("/socket-emit", (req, res) => {
