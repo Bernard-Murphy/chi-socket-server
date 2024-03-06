@@ -117,7 +117,7 @@ app.use(async (req, res, next) => {
     }
     next();
   } catch (err) {
-    console.log("Entry error", err);
+    console.log("Entry error", err, req.url);
     res.sendStatus(500);
   }
 });
