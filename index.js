@@ -16,6 +16,7 @@ const renderSite = require("./utilities/renderSite");
 const routes = require("./utilities/routes");
 const h = require("./utilities/helpers");
 const { html2json } = require("html2json");
+const lambdaRoutes = require("./utilities/lambdaRoutes");
 
 process.env.PUBLIC_KEY = fs.readFileSync(__dirname + "/publicKey.key");
 process.env.PRIVATE_KEY = fs.readFileSync(__dirname + "/privateKey.key");
@@ -80,6 +81,8 @@ app.use(express.static(__dirname + "/public", { index: false }));
 
 app.use(async (req, res, next) => {
   try {
+    console.log(req.url, lambdaRoutes.indexOf(req.url));
+    if (lambdaRoutes.indexOf(req.url) > -1) next();
     if (!req.url.includes(".") && !decodeURIComponent(req.url).includes("卐")) {
       const db = socketClient.db("sessionServer");
       const hostname = h.parseHost(req.hostname);

@@ -410,6 +410,8 @@ const moduleExports = (io, emitter) => {
 
   routes.post("/post-reply", async (req, res) => {
     try {
+      if (req.body.socketKey !== process.env.SOCKET_KEY)
+        return res.sendStatus(401);
       let emission = req.body.emission;
       const sessionDB = client.db("sessionServer");
       emission.replyEmission.userLikes = h.getUserLikes(
