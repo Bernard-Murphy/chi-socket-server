@@ -82,7 +82,7 @@ app.use(express.static(__dirname + "/public", { index: false }));
 app.use(async (req, res, next) => {
   try {
     console.log(req.url, lambdaRoutes.indexOf(req.url));
-    if (lambdaRoutes.indexOf(req.url) > -1) next();
+    if (lambdaRoutes.indexOf(req.url) > -1) return next();
     if (!req.url.includes(".") && !decodeURIComponent(req.url).includes("卐")) {
       const db = socketClient.db("sessionServer");
       const hostname = h.parseHost(req.hostname);
