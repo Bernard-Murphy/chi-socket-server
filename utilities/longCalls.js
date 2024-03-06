@@ -18,11 +18,12 @@ c.getPollData = async (io, emission, db) => {
     return Object.keys(io.engine.clients).find((key) => {
       if (
         !io.engine.clients[key]?.request?.session ||
-        !io.engine.clients[key].request.session.userInfo
+        !io.engine.clients[key].request.session[host]?.userInfo
       )
         return false;
       return (
-        io.engine.clients[key].request.session.userInfo._id === voter.userID
+        io.engine.clients[key].request.session[host]?.userInfo._id ===
+        voter.userID
       );
     });
   });
