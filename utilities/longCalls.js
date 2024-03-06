@@ -17,7 +17,7 @@ c.getPollData = async (io, emission, db) => {
     if (v < 100) return true;
     return Object.keys(io.engine.clients).find((key) => {
       if (
-        !io.engine.clients[key].request.session ||
+        !io.engine.clients[key]?.request?.session ||
         !io.engine.clients[key].request.session.userInfo
       )
         return false;

@@ -443,7 +443,7 @@ h.getUserLikes = (io, emission, host) => {
   return Object.keys(io.engine.clients)
     .filter((key) => {
       return (
-        io.engine.clients[key].request.session[host] &&
+        io.engine.clients[key]?.request?.session[host] &&
         io.engine.clients[key].request.session[host]?.userInfo?.likes?.indexOf(
           emission.emissionID
         ) > -1
