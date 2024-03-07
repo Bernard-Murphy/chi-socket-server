@@ -81,12 +81,10 @@ app.use(express.static(__dirname + "/public", { index: false }));
 
 app.use(async (req, res, next) => {
   try {
-    console.log(req.url, lambdaRoutes.indexOf(req.url));
     if (lambdaRoutes.indexOf(req.url) > -1) return next();
     if (!req.url.includes(".") && !decodeURIComponent(req.url).includes("卐")) {
       const db = socketClient.db("sessionServer");
       const hostname = h.parseHost(req.hostname);
-      console.log(hostname);
       if (!req.session[hostname]?.instanceID) {
         const instanceInfo = await db
           .collection("instances")
@@ -248,7 +246,7 @@ const socketClient = new MongoClient(mongoUrl);
       req.body.recipients.forEach((recipient) => {
         try {
           emitter
-            .to(req.body.to + "卐卐卐卐" + req.body.instanceID)
+            .to(recipient + "卐卐卐卐" + req.body.instanceID)
             .emit(...req.body.emit);
         } catch (err) {
           console.log("Error emitting to recipient", err);
