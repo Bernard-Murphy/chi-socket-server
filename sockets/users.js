@@ -1,4 +1,3 @@
-const { endStream } = require("../db");
 const h = require("../utilities/helpers");
 const { io: streamIO } = require("socket.io-client");
 const { live_title_schema } = require("../utilities/validations");
@@ -161,7 +160,7 @@ const userSocket = async (io, socket, host, suffix) => {
         const sessionDB = client.db("sessionServer");
         const db = client.db(instanceID);
         const Users = db.collection("users");
-        const instanceInfo = sessionDB
+        const instanceInfo = await sessionDB
           .collection("instances")
           .findOne({ instanceID: instanceID });
         if (!instanceInfo) throw "Instance not found";
@@ -250,11 +249,17 @@ const userSocket = async (io, socket, host, suffix) => {
       try {
         if (streamSocket && streamSocket.disconnect) streamSocket.disconnect();
         streamSocket = false;
-        await endStream({
-          instanceID,
-          userID,
-          client,
-        });
+        const db = client.db(instanceID);
+        await db.collection("users").updateOne(
+          {
+            _id: userID,
+          },
+          {
+            $set: {
+              live: false,
+            },
+          }
+        );
         io.to(username + suffix).emit("stream-end");
         io.to(userID + suffix).emit("stream-terminated");
       } catch (err) {
@@ -274,11 +279,17 @@ const userSocket = async (io, socket, host, suffix) => {
         if (socket.request.session[host].userInfo && streamSocket) {
           if (streamSocket.disconnect) streamSocket.disconnect();
           streamSocket = false;
-          await endStream({
-            instanceID,
-            userID,
-            client,
-          });
+          const db = client.db(instanceID);
+          await db.collection("users").updateOne(
+            {
+              _id: userID,
+            },
+            {
+              $set: {
+                live: false,
+              },
+            }
+          );
           io.to(username + suffix).emit("stream-end");
           io.to(userID + suffix).emit("stream-terminated");
         }

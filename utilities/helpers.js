@@ -93,7 +93,13 @@ h.returnClientUserInfo = (userInfo, hideIdentifyingInfo) => {
     creationDate: userInfo.creationDate,
     ban: userInfo.ban,
     messagesDisabled: userInfo.messagesDisabled,
-    live: userInfo.live,
+    live: userInfo.live
+      ? {
+          timestamp: userInfo.live.timestamp,
+          viewers: userInfo.live.viewers,
+          streamTitle: userInfo.live.streamTitle,
+        }
+      : false,
     verified: userInfo.verified,
     boosts: hideIdentifyingInfo ? userInfo.boosts.length : userInfo.boosts,
     deleted: userInfo.deleted,

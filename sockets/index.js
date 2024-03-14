@@ -17,40 +17,46 @@ const socketHandler = (io, socket) => {
      * if on profile page, join profile room (username卐)
      * If on tag page, join tag room (tag卐卐)
      */
-    if (!socket.request?.session) {
-      console.log("no session found");
-      return;
-    }
-    let host = socket.request.headers.Referer || socket.request.headers.referer;
-    host = h.parseHost(host);
-    if (!host) {
-      console.log("No host", socket.request.headers);
-      return;
-    }
-    const suffix = "卐卐卐卐" + socket.request.session[host].instanceID;
+    if (socket.handshake.query?.socketKey === process.env.SOCKET_KEY) {
+      console.log("stream child", socket.handshake.query);
+      socket.join(socket.handshake.query.peerID);
+    } else {
+      if (!socket.request?.session) {
+        console.log("no session found");
+        return;
+      }
+      let host =
+        socket.request.headers.Referer || socket.request.headers.referer;
+      host = h.parseHost(host);
+      if (!host) {
+        console.log("No host", socket.request.headers);
+        return;
+      }
+      const suffix = "卐卐卐卐" + socket.request.session[host].instanceID;
 
-    console.log("join", socket.handshake.query.join + suffix);
-    console.log(
-      "join",
-      (socket.request.session[host].userInfo?._id ||
-        socket.request.session[host].tempID) + suffix
-    );
-    socket.join(socket.handshake.query.join + suffix);
-    socket.join(
-      (socket.request.session[host].userInfo?._id ||
-        socket.request.session[host].tempID) + suffix
-    );
-
-    socket.on("update-state", (state) => {
-      socket.leave(state.previous.join + suffix);
-      socket.join(state.current.join + suffix);
+      console.log("join", socket.handshake.query.join + suffix);
+      console.log(
+        "join",
+        (socket.request.session[host].userInfo?._id ||
+          socket.request.session[host].tempID) + suffix
+      );
+      socket.join(socket.handshake.query.join + suffix);
       socket.join(
         (socket.request.session[host].userInfo?._id ||
           socket.request.session[host].tempID) + suffix
       );
-    });
-    messages(io, socket, host, suffix);
-    users(io, socket, host, suffix);
+
+      socket.on("update-state", (state) => {
+        socket.leave(state.previous.join + suffix);
+        socket.join(state.current.join + suffix);
+        socket.join(
+          (socket.request.session[host].userInfo?._id ||
+            socket.request.session[host].tempID) + suffix
+        );
+      });
+      messages(io, socket, host, suffix);
+      users(io, socket, host, suffix);
+    }
   } catch (err) {
     console.log("Socket handler error", err);
   }
