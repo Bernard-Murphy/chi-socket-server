@@ -1,3 +1,4 @@
+const c = require("../utilities/longCalls");
 const h = require("../utilities/helpers");
 const { io: streamIO } = require("socket.io-client");
 const { live_title_schema } = require("../utilities/validations");
@@ -231,6 +232,27 @@ const userSocket = async (io, socket, host, suffix) => {
               }
             } catch (err) {
               console.log("set viewers error", err);
+            }
+          });
+
+          streamSocket.on("new-live", async (emissionData) => {
+            try {
+              const db = context.mongoClient.db(emissionData.instanceID);
+              const sessionDB = context.mongoClient.db("sessionServer");
+              const userInfo = await db
+                .collection("users")
+                .findOne({ _id: emissionData.userID });
+              const context = {
+                session: {
+                  userInfo: userInfo,
+                },
+              };
+              let emission = await c.getEmission(
+                { emissionID: emissionData.emissionID },
+                context
+              );
+            } catch (err) {
+              console.log("New Live error", err);
             }
           });
         }
