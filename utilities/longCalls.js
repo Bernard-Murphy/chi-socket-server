@@ -2,6 +2,100 @@ const h = require("./helpers");
 
 const c = {};
 
+c.trimPollData = async (emissions, context) => {
+  try {
+    const userInfo = context.session.userInfo;
+    const db = context.mongoClient.db(context.instanceInfo.instanceID);
+    const Users = db.collection("users");
+    const userIDs = [];
+    const voterFilter = (emission) => ({
+      ...emission,
+      pollData: emission.pollData
+        ? {
+            ...emission.pollData,
+            voters: emission.pollData.voters.filter((voter, v) => {
+              if (voter.userID === userInfo?._id || v < 100) {
+                if (!userIDs.find((userID) => userID === voter.userID))
+                  userIDs.push(voter.userID);
+                return true;
+              }
+
+              return false;
+            }),
+          }
+        : false,
+    });
+
+    emissions = emissions.map((emission) => {
+      emission = voterFilter(emission);
+      if (emission.signalBoost)
+        emission.signalBoost = voterFilter(emission.signalBoost);
+      if (emission.replyEmission) {
+        emission.replyEmission = voterFilter(emission.replyEmission);
+        if (emission.replyEmission.signalBoost)
+          emission.replyEmission.signalBoost = voterFilter(
+            emission.replyEmission.signalBoost
+          );
+
+        if (emission.replyEmission.replyEmission) {
+          emission.replyEmission.replyEmission = voterFilter(
+            emission.replyEmission.replyEmission
+          );
+          if (emission.replyEmission.replyEmission.signalBoost)
+            emission.replyEmission.replyEmission.signalBoost = voterFilter(
+              emission.replyEmission.replyEmission.signalBoost
+            );
+        }
+      }
+
+      return emission;
+    });
+    const users = await Users.find({ _id: { $in: userIDs } }).toArray();
+    const addUserInfoToPoll = (emission) => ({
+      ...emission,
+      pollData: emission.pollData
+        ? {
+            ...emission.pollData,
+            voters: emission.pollData.voters.map((voter) => ({
+              ...voter,
+              ...h.userInfoPoll(
+                users.find((user) => user._id === voter.userID),
+                true
+              ),
+            })),
+          }
+        : false,
+    });
+    return emissions.map((emission) => {
+      emission = addUserInfoToPoll(emission);
+      if (emission.signalBoost)
+        emission.signalBoost = addUserInfoToPoll(emission.signalBoost);
+      if (emission.replyEmission) {
+        emission.replyEmission = addUserInfoToPoll(emission.replyEmission);
+        if (emission.replyEmission.signalBoost)
+          emission.replyEmission.signalBoost = addUserInfoToPoll(
+            emission.replyEmission.signalBoost
+          );
+
+        if (emission.replyEmission.replyEmission) {
+          emission.replyEmission.replyEmission = addUserInfoToPoll(
+            emission.replyEmission.replyEmission
+          );
+          if (emission.replyEmission.replyEmission.signalBoost)
+            emission.replyEmission.replyEmission.signalBoost =
+              addUserInfoToPoll(
+                emission.replyEmission.replyEmission.signalBoost
+              );
+        }
+      }
+      return emission;
+    });
+  } catch (err) {
+    console.log("Trim poll data error", err);
+    return emissions;
+  }
+};
+
 /**
  *
  * @param {Object} constraint - MongoDB constraint object

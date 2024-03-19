@@ -14,6 +14,68 @@ const mongoUrl =
 const client = new MongoClient(mongoUrl);
 
 const moduleExports = (io, emitter) => {
+  routes.post("/new-live", async (req, res) => {
+    try {
+      console.log("new live", req.body);
+      if (req.body.streamKey !== process.env.STREAM_KEY)
+        return res.sendStatus(500);
+      const host = h.parseHost(req.hostname);
+      const emissionData = req.body;
+      const db = client.db(emissionData.instanceID);
+      const sessionDB = client.db("sessionServer");
+      const userInfo = await db
+        .collection("users")
+        .findOne({ _id: emissionData.userID });
+      const context = {
+        session: {
+          userInfo: userInfo,
+        },
+        mongoClient: client,
+        instanceInfo: {
+          instanceID: emissionData.instanceID,
+        },
+      };
+      let emission = await c.getEmission(
+        { emissionID: emissionData.emissionID },
+        context
+      );
+      await sessionDB.collection("sessions").updateMany(
+        {
+          [`session.${host}.profile`]: userInfo._id,
+        },
+        {
+          $push: {
+            [`session.${host}.emissionsCollected`]: emission.emissionID,
+          },
+        }
+      );
+      const viewers = io.sockets.adapter.rooms.get(
+        userInfo.username.toLowerCase()
+      );
+      if (viewers && viewers.size) {
+        emission.views = viewers.size;
+        await db.collection("emissions").updateOne(
+          {
+            emissionID: emission.emissionID,
+          },
+          {
+            $inc: {
+              views: viewers.size,
+            },
+          }
+        );
+      }
+      const username = userInfo.username.toLowerCase() + "卐";
+      const suffix = "卐卐卐卐" + context.instanceInfo.instanceID;
+      console.log(username + suffix);
+      io.to(username + suffix).emit("new-emission", emission);
+      res.sendStatus(200);
+    } catch (err) {
+      console.log("new live error", err);
+      res.sendStatus(500);
+    }
+  });
+
   routes.post("/increment-viewers", async (req, res) => {
     try {
       if (req.body.socketKey !== process.env.SOCKET_KEY)

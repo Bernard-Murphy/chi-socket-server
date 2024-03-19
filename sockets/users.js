@@ -3,6 +3,7 @@ const h = require("../utilities/helpers");
 const { io: streamIO } = require("socket.io-client");
 const { live_title_schema } = require("../utilities/validations");
 const { MongoClient } = require("mongodb");
+const { v4: uuid } = require("uuid");
 
 const mongoUrl =
   "mongodb+srv://" +
@@ -16,6 +17,7 @@ const client = new MongoClient(mongoUrl);
 
 const userSocket = async (io, socket, host, suffix) => {
   try {
+    const streamViewID = uuid();
     const userID = socket.request.session[host].userInfo?._id;
     const username =
       socket.request.session[host].userInfo?.username.toLowerCase() + "卐";
@@ -237,8 +239,9 @@ const userSocket = async (io, socket, host, suffix) => {
 
           streamSocket.on("new-live", async (emissionData) => {
             try {
-              const db = context.mongoClient.db(emissionData.instanceID);
-              const sessionDB = context.mongoClient.db("sessionServer");
+              console.log("new live", emissionData);
+              const db = client.db(emissionData.instanceID);
+              const sessionDB = client.db("sessionServer");
               const userInfo = await db
                 .collection("users")
                 .findOne({ _id: emissionData.userID });
@@ -246,10 +249,44 @@ const userSocket = async (io, socket, host, suffix) => {
                 session: {
                   userInfo: userInfo,
                 },
+                mongoClient: client,
+                instanceInfo: {
+                  instanceID: emissionData.instanceID,
+                },
               };
               let emission = await c.getEmission(
                 { emissionID: emissionData.emissionID },
                 context
+              );
+              await sessionDB.collection("sessions").updateMany(
+                {
+                  [`session.${host}.profile`]: userInfo._id,
+                },
+                {
+                  $push: {
+                    [`session.${host}.emissionsCollected`]: emission.emissionID,
+                  },
+                }
+              );
+              const viewers = io.sockets.adapter.rooms.get(
+                userInfo.username.toLowerCase()
+              );
+              if (viewers && viewers.size) {
+                await db.collection("emissions").updateOne(
+                  {
+                    emissionID: emission.emissionID,
+                  },
+                  {
+                    $inc: {
+                      views: viewers.size,
+                    },
+                  }
+                );
+              }
+
+              io.to(userInfo.username.toLowerCase()).emit(
+                "new-emission",
+                emission
               );
             } catch (err) {
               console.log("New Live error", err);
@@ -258,6 +295,78 @@ const userSocket = async (io, socket, host, suffix) => {
         }
       } catch (err) {
         console.log("start stream error", err);
+      }
+    });
+
+    socket.on("view-stream", async (hostID, peerID) => {
+      try {
+        const sessionDB = client.db("sessionServer");
+        const db = client.db(instanceID);
+
+        const existing = await sessionDB
+          .collection("streamClients")
+          .findOneAndUpdate(
+            {
+              clients: {
+                size: {
+                  $lt: 10,
+                },
+              },
+              userID: hostID,
+            },
+            {
+              $push: {
+                clients: {
+                  timestamp: new Date(),
+                  userID,
+                  peerID,
+                },
+              },
+            },
+            {
+              returnDocument: "after",
+            }
+          );
+        if (existing) {
+          io.to(existing.peerID).emit("add-client", peerID);
+        } else {
+          const userInfo = await db
+            .collection("users")
+            .findOne({ _id: hostID });
+          if (!userInfo.live) return;
+
+          const newHost = await sessionDB
+            .collection("streamClients")
+            .findOneAndUpdate(
+              {
+                userID: null,
+              },
+              {
+                $set: {
+                  userID: hostID,
+                },
+                $push: {
+                  clients: {
+                    timestamp: new Date(),
+                    userID,
+                    peerID,
+                  },
+                },
+              },
+              {
+                returnDocument: "after",
+              }
+            );
+          if (newHost) {
+            console.log(userInfo.live);
+            console.log(userInfo.live.id, peerID);
+            io.to(newHost.peerID).emit("init", userInfo.live.id, peerID);
+          } else {
+            console.log("No clients available");
+          }
+        }
+      } catch (err) {
+        console.log("view stream error", err);
       }
     });
 
@@ -302,6 +411,7 @@ const userSocket = async (io, socket, host, suffix) => {
           if (streamSocket.disconnect) streamSocket.disconnect();
           streamSocket = false;
           const db = client.db(instanceID);
+          const sessionDB = client.db("sessionServer");
           await db.collection("users").updateOne(
             {
               _id: userID,
@@ -309,6 +419,18 @@ const userSocket = async (io, socket, host, suffix) => {
             {
               $set: {
                 live: false,
+              },
+            }
+          );
+          await sessionDB.collection("streamClients").updateMany(
+            {
+              "clients.id": streamViewID,
+            },
+            {
+              $pull: {
+                clients: {
+                  id: streamViewID,
+                },
               },
             }
           );

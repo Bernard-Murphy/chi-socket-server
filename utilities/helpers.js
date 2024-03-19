@@ -13,6 +13,20 @@ const h = {};
 
 h.id = () => crypto.randomBytes(8).toString("hex");
 
+h.userInfoPoll = (userInfo) => ({
+  username: userInfo.username,
+  creationDate: userInfo.creationDate,
+  role: userInfo.role,
+  avatar: userInfo.avatar,
+  background: userInfo.background,
+  user_id: userInfo.user_id,
+  badge: userInfo.badge,
+  displayName: userInfo.displayName,
+  private: userInfo.private,
+  _id: userInfo._id,
+  verified: userInfo.verified,
+});
+
 h.trimPollData = (emissions, userInfo) =>
   emissions.map((emission) => {
     const voterFilter = (emissionWithPoll) => ({
@@ -105,6 +119,321 @@ h.returnClientUserInfo = (userInfo, hideIdentifyingInfo) => {
     deleted: userInfo.deleted,
   };
 };
+
+/**
+ *
+ * @param {Array} emissions - an array of Emissions documents
+ * @param {Object} userInfo - Users document
+ * @returns the array of emissions with their body removed if they block the author/author blocks them/author is private/etc, and the user does not have janny privileges
+ */
+h.filterRemoved = (emissions, userInfo, context) =>
+  emissions.map((emission) => {
+    if (emission.isBlocked && !h.checkJanny_userInfo(userInfo))
+      emission = {
+        ...emission,
+        html: `<h5 class="text-center display-6 my-4">@${emission.username} is blocked</h5>`,
+        files: false,
+        pollData: false,
+        signalBoost: false,
+      };
+    else if (
+      emission.private &&
+      !h.checkJanny_userInfo(userInfo) &&
+      (!userInfo || userInfo._id !== emission.userID)
+    )
+      emission = {
+        ...emission,
+        html: `<h5 class="text-center display-6 my-4">@${emission.username} has privated their account</h5>`,
+        files: false,
+        pollData: false,
+        signalBoost: false,
+      };
+    else if (emission.blocksMe && !h.checkJanny_userInfo(userInfo))
+      emission = {
+        ...emission,
+        html: `<h5 class="text-center display-6 my-4">@${emission.username} has blocked you</h5>`,
+        files: false,
+        pollData: false,
+        signalBoost: false,
+      };
+    else if (
+      emission.remove.removed &&
+      !h.checkJanny_userInfo(userInfo) &&
+      (!userInfo || userInfo._id !== emission.userID)
+    )
+      emission = {
+        ...emission,
+        html: `<h5 class="text-center display-6 my-4"><span class="text-capitalize">${context.instanceInfo.instanceID}</span> Removed</h5>`,
+        files: false,
+        pollData: false,
+        signalBoost: false,
+      };
+
+    if (
+      emission.signalBoost &&
+      emission.signalBoost.isBlocked &&
+      !h.checkJanny_userInfo(userInfo)
+    )
+      emission.signalBoost = {
+        ...emission.signalBoost,
+        html: `<h5 class="text-center display-6 my-4">@${emission.signalBoost.username} is blocked</h5>`,
+        files: false,
+        pollData: false,
+        signalBoost: false,
+      };
+    else if (
+      emission.signalBoost &&
+      emission.signalBoost.private &&
+      !h.checkJanny_userInfo(userInfo) &&
+      (!userInfo || userInfo._id !== emission.signalBoost.userID)
+    )
+      emission.signalBoost = {
+        ...emission.signalBoost,
+        html: `<h5 class="text-center display-6 my-4">@${emission.signalBoost.username} has privated their account</h5>`,
+        files: false,
+        pollData: false,
+        signalBoost: false,
+      };
+    else if (
+      emission.signalBoost &&
+      emission.signalBoost.blocksMe &&
+      !h.checkJanny_userInfo(userInfo)
+    )
+      emission.signalBoost = {
+        ...emission.signalBoost,
+        html: `<h5 class="text-center display-6 my-4">@${emission.signalBoost.username} has blocked you</h5>`,
+        files: false,
+        pollData: false,
+        signalBoost: false,
+      };
+    else if (
+      emission.signalBoost &&
+      emission.signalBoost.remove.removed &&
+      !h.checkJanny_userInfo(userInfo) &&
+      (!userInfo || userInfo._id !== emission.signalBoost.userID)
+    )
+      emission.signalBoost = {
+        ...emission.signalBoost,
+        html: `<h5 class="text-center display-6 my-4"><span class="text-capitalize">${context.instanceInfo.instanceID}</span> Removed</h5>`,
+        files: false,
+        pollData: false,
+        signalBoost: false,
+      };
+
+    if (emission.replyEmission) {
+      if (
+        emission.replyEmission &&
+        emission.replyEmission.isBlocked &&
+        !h.checkJanny_userInfo(userInfo)
+      )
+        emission.replyEmission = {
+          ...emission.replyEmission,
+          html: `<h5 class="text-center display-6 my-4">@${emission.replyEmission.username} is blocked</h5>`,
+          files: false,
+          pollData: false,
+          replyEmission: false,
+        };
+      else if (
+        emission.replyEmission.private &&
+        !h.checkJanny_userInfo(userInfo) &&
+        (!userInfo || userInfo._id !== emission.replyEmission.userID)
+      )
+        emission.replyEmission = {
+          ...emission.replyEmission,
+          html: `<h5 class="text-center display-6 my-4">@${emission.replyEmission.username} has privated their account</h5>`,
+          files: false,
+          pollData: false,
+          signalBoost: false,
+        };
+      else if (
+        emission.replyEmission &&
+        emission.replyEmission.blocksMe &&
+        !h.checkJanny_userInfo(userInfo)
+      )
+        emission.replyEmission = {
+          ...emission.replyEmission,
+          html: `<h5 class="text-center display-6 my-4">@${emission.replyEmission.username} has blocked you</h5>`,
+          files: false,
+          pollData: false,
+          replyEmission: false,
+        };
+      else if (
+        emission.replyEmission.remove.removed &&
+        !h.checkJanny_userInfo(userInfo) &&
+        (!userInfo || userInfo._id !== emission.replyEmission.userID)
+      )
+        emission.replyEmission = {
+          ...emission.replyEmission,
+          html: `<h5 class="text-center display-6 my-4"><span class="text-capitalize">${context.instanceInfo.instanceID}</span> Removed</h5>`,
+          files: false,
+          pollData: false,
+          signalBoost: false,
+        };
+
+      if (
+        emission.replyEmission.signalBoost &&
+        emission.replyEmission.signalBoost.isBlocked &&
+        !h.checkJanny_userInfo(userInfo)
+      )
+        emission.replyEmission.signalBoost = {
+          ...emission.replyEmission.signalBoost,
+          html: `<h5 class="text-center display-6 my-4">@${emission.replyEmission.signalBoost.username} is blocked</h5>`,
+          files: false,
+          pollData: false,
+          replyEmission: false,
+        };
+      else if (
+        emission.replyEmission.signalBoost &&
+        emission.replyEmission.signalBoost.private &&
+        !h.checkJanny_userInfo(userInfo) &&
+        (!userInfo ||
+          userInfo._id !== emission.replyEmission.signalBoost.userID)
+      )
+        emission.replyEmission.signalBoost = {
+          ...emission.replyEmission.signalBoost,
+          html: `<h5 class="text-center display-6 my-4">@${emission.replyEmission.signalBoost.username} has privated their account</h5>`,
+          files: false,
+          pollData: false,
+          signalBoost: false,
+        };
+      else if (
+        emission.replyEmission.signalBoost &&
+        emission.replyEmission.signalBoost.blocksMe &&
+        !h.checkJanny_userInfo(userInfo)
+      )
+        emission.replyEmission.signalBoost = {
+          ...emission.replyEmission.signalBoost,
+          html: `<h5 class="text-center display-6 my-4">@${emission.replyEmission.signalBoost.username} has blocked you</h5>`,
+          files: false,
+          pollData: false,
+          replyEmission: false,
+        };
+      else if (
+        emission.replyEmission.signalBoost &&
+        emission.replyEmission.signalBoost.remove.removed &&
+        !h.checkJanny_userInfo(userInfo) &&
+        (!userInfo ||
+          userInfo._id !== emission.replyEmission.signalBoost.userID)
+      )
+        emission.replyEmission.signalBoost = {
+          ...emission.replyEmission.signalBoost,
+          html: `<h5 class="text-center display-6 my-4"><span class="text-capitalize">${context.instanceInfo.instanceID}</span> Removed</h5>`,
+          files: false,
+          pollData: false,
+          signalBoost: false,
+        };
+
+      if (emission.replyEmission.replyEmission) {
+        if (
+          emission.replyEmission.replyEmission &&
+          emission.replyEmission.replyEmission.isBlocked &&
+          !h.checkJanny_userInfo(userInfo)
+        )
+          emission.replyEmission.replyEmission = {
+            ...emission.replyEmission.replyEmission,
+            html: `<h5 class="text-center display-6 my-4">@${emission.replyEmission.replyEmission.username} is blocked</h5>`,
+            files: false,
+            pollData: false,
+            replyEmission: false,
+          };
+        else if (
+          emission.replyEmission.replyEmission.private &&
+          !h.checkJanny_userInfo(userInfo) &&
+          (!userInfo ||
+            userInfo._id !== emission.replyEmission.replyEmission.userID)
+        )
+          emission.replyEmission.replyEmission = {
+            ...emission.replyEmission.replyEmission,
+            html: `<h5 class="text-center display-6 my-4">@${emission.replyEmission.replyEmission.username} has privated their account</h5>`,
+            files: false,
+            pollData: false,
+            signalBoost: false,
+          };
+        else if (
+          emission.replyEmission.replyEmission &&
+          emission.replyEmission.replyEmission.blocksMe &&
+          !h.checkJanny_userInfo(userInfo)
+        )
+          emission.replyEmission.replyEmission = {
+            ...emission.replyEmission.replyEmission,
+            html: `<h5 class="text-center display-6 my-4">@${emission.replyEmission.replyEmission.username} has blocked you</h5>`,
+            files: false,
+            pollData: false,
+            replyEmission: false,
+          };
+        else if (
+          emission.replyEmission.replyEmission.remove.removed &&
+          !h.checkJanny_userInfo(userInfo) &&
+          (!userInfo ||
+            userInfo._id !== emission.replyEmission.replyEmission.userID)
+        )
+          emission.replyEmission.replyEmission = {
+            ...emission.replyEmission.replyEmission,
+            html: `<h5 class="text-center display-6 my-4"><span class="text-capitalize">${context.instanceInfo.instanceID}</span> Removed</h5>`,
+            files: false,
+            pollData: false,
+            signalBoost: false,
+          };
+
+        if (
+          emission.replyEmission.replyEmission.signalBoost &&
+          emission.replyEmission.replyEmission.signalBoost.isBlocked &&
+          !h.checkJanny_userInfo(userInfo)
+        )
+          emission.replyEmission.replyEmission.signalBoost = {
+            ...emission.replyEmission.replyEmission.signalBoost,
+            html: `<h5 class="text-center display-6 my-4">@${emission.replyEmission.replyEmission.signalBoost.username} is blocked</h5>`,
+            files: false,
+            pollData: false,
+            replyEmission: false,
+          };
+        else if (
+          emission.replyEmission.replyEmission.signalBoost &&
+          emission.replyEmission.replyEmission.signalBoost.private &&
+          !h.checkJanny_userInfo(userInfo) &&
+          (!userInfo ||
+            userInfo._id !==
+              emission.replyEmission.replyEmission.signalBoost.userID)
+        )
+          emission.replyEmission.replyEmission.signalBoost = {
+            ...emission.replyEmission.replyEmission.signalBoost,
+            html: `<h5 class="text-center display-6 my-4">@${emission.replyEmission.replyEmission.signalBoost.username} has privated their account</h5>`,
+            files: false,
+            pollData: false,
+            signalBoost: false,
+          };
+        else if (
+          emission.replyEmission.replyEmission.signalBoost &&
+          emission.replyEmission.replyEmission.signalBoost.blocksMe &&
+          !h.checkJanny_userInfo(userInfo)
+        )
+          emission.replyEmission.replyEmission.signalBoost = {
+            ...emission.replyEmission.replyEmission.signalBoost,
+            html: `<h5 class="text-center display-6 my-4">@${emission.replyEmission.replyEmission.signalBoost.username} has blocked you</h5>`,
+            files: false,
+            pollData: false,
+            replyEmission: false,
+          };
+        else if (
+          emission.replyEmission.replyEmission.signalBoost &&
+          emission.replyEmission.replyEmission.signalBoost.remove.removed &&
+          !h.checkJanny_userInfo(userInfo) &&
+          (!userInfo ||
+            userInfo._id !==
+              emission.replyEmission.replyEmission.signalBoost.userID)
+        )
+          emission.replyEmission.replyEmission.signalBoost = {
+            ...emission.replyEmission.replyEmission.signalBoost,
+            html: `<h5 class="text-center display-6 my-4"><span class="text-capitalize">${context.instanceInfo.instanceID}</span> Removed</h5>`,
+            files: false,
+            pollData: false,
+            signalBoost: false,
+          };
+      }
+    }
+
+    return emission;
+  });
 
 h.getExpirationDate = (expiryUnits, expiryLength) => {
   const expirationDate = new Date();
