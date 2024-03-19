@@ -39,12 +39,10 @@ const socketHandler = async (io, socket) => {
         hostID: false,
         clients: [],
       });
-      console.log("stream child", socket.handshake.query);
       socket.join(socket.handshake.query.peerID);
 
       socket.on("disconnecting", async () => {
         try {
-          console.log("disconnecting", peerID);
           await sessionDB.collection("streamClients").deleteMany({
             peerID,
           });

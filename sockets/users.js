@@ -239,7 +239,6 @@ const userSocket = async (io, socket, host, suffix) => {
 
           streamSocket.on("new-live", async (emissionData) => {
             try {
-              console.log("new live", emissionData);
               const db = client.db(emissionData.instanceID);
               const sessionDB = client.db("sessionServer");
               const userInfo = await db
@@ -358,8 +357,6 @@ const userSocket = async (io, socket, host, suffix) => {
               }
             );
           if (newHost) {
-            console.log(userInfo.live);
-            console.log(userInfo.live.id, peerID);
             io.to(newHost.peerID).emit("init", userInfo.live.id, peerID);
           } else {
             console.log("No clients available");
