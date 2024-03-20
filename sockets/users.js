@@ -375,7 +375,7 @@ const userSocket = async (io, socket, host, suffix) => {
      */
     socket.on("end-stream", async () => {
       try {
-        if (streamSocket && streamSocket.disconnect) streamSocket.disconnect();
+        if (streamSocket?.disconnect) streamSocket.disconnect();
         streamSocket = false;
         const db = client.db(instanceID);
         await db.collection("users").updateOne(
