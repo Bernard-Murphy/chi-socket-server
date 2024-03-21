@@ -239,18 +239,16 @@ const userSocket = async (io, socket, host, suffix) => {
             }
           });
 
-          streamSocket.on(
-            "streaming",
-            () =>
-              (streamSockets = streamSockets.filter((s) => {
-                if (s.streamID !== streamID) {
-                  s.streamSocket.disconnect();
-                  return false;
-                }
+          streamSocket.on("streaming", () => {
+            streamSockets = streamSockets.filter((s) => {
+              if (s.streamID !== streamID) {
+                s.streamSocket.disconnect();
+                return false;
+              }
 
-                return true;
-              }))
-          );
+              return true;
+            });
+          });
 
           streamSockets.push({
             streamSocket,
