@@ -16,7 +16,6 @@ const client = new MongoClient(mongoUrl);
 const moduleExports = (io, emitter) => {
   routes.post("/new-live", async (req, res) => {
     try {
-      console.log("new live", req.body);
       if (req.body.streamKey !== process.env.STREAM_KEY)
         return res.sendStatus(500);
       const host = h.parseHost(req.hostname);

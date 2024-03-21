@@ -23,7 +23,7 @@ const userSocket = async (io, socket, host, suffix) => {
       socket.request.session[host].userInfo?.username.toLowerCase() + "卐";
     const instanceID = socket.request.session[host].instanceID;
     const room = socket.handshake.query.join;
-    let streamSocket;
+    let streamSockets = [];
     let lastMessage = new Date();
 
     const login = async () => {
@@ -160,6 +160,7 @@ const userSocket = async (io, socket, host, suffix) => {
      */
     socket.on("start-stream", async (details) => {
       try {
+        console.log("start stream", details.peerID);
         const sessionDB = client.db("sessionServer");
         const db = client.db(instanceID);
         const Users = db.collection("users");
@@ -187,12 +188,14 @@ const userSocket = async (io, socket, host, suffix) => {
             details.streamTitle = "Live Stream";
           }
           if (!details.streamTitle) details.streamTitle = "Live Stream";
-          streamSocket = streamIO(process.env.STREAM_SERVER, {
+
+          const streamID = uuid();
+          const streamSocket = streamIO(process.env.STREAM_SERVER, {
             query: {
               key: process.env.STREAM_KEY,
               peerID: details.peerID,
-              userID: userID,
-              instanceID: instanceID,
+              userID,
+              instanceID,
               avatar: JSON.stringify(
                 socket.request.session[host].userInfo.avatar
               ),
@@ -202,10 +205,12 @@ const userSocket = async (io, socket, host, suffix) => {
               root: "https://" + host,
               database: instanceID,
               clipCount: details.clipCount,
+              streamID,
             },
           });
           streamSocket.on("viewers", async (viewers) => {
             try {
+              console.log("viewers", viewers);
               const update = await Users.findOneAndUpdate(
                 {
                   _id: userID,
@@ -222,14 +227,11 @@ const userSocket = async (io, socket, host, suffix) => {
                   returnDocument: "after",
                 }
               );
-              if (update.value) {
-                io.to(username + suffix).emit(
-                  "viewers",
-                  update.value.live.viewers
-                );
+              if (update) {
+                io.to(username + suffix).emit("viewers", update.live.viewers);
                 io.to(userID + suffix).emit(
                   "viewers-self",
-                  update.value.live.viewers
+                  update.live.viewers
                 );
               }
             } catch (err) {
@@ -237,59 +239,22 @@ const userSocket = async (io, socket, host, suffix) => {
             }
           });
 
-          streamSocket.on("new-live", async (emissionData) => {
-            try {
-              const db = client.db(emissionData.instanceID);
-              const sessionDB = client.db("sessionServer");
-              const userInfo = await db
-                .collection("users")
-                .findOne({ _id: emissionData.userID });
-              const context = {
-                session: {
-                  userInfo: userInfo,
-                },
-                mongoClient: client,
-                instanceInfo: {
-                  instanceID: emissionData.instanceID,
-                },
-              };
-              let emission = await c.getEmission(
-                { emissionID: emissionData.emissionID },
-                context
-              );
-              await sessionDB.collection("sessions").updateMany(
-                {
-                  [`session.${host}.profile`]: userInfo._id,
-                },
-                {
-                  $push: {
-                    [`session.${host}.emissionsCollected`]: emission.emissionID,
-                  },
+          streamSocket.on(
+            "streaming",
+            () =>
+              (streamSockets = streamSockets.filter((s) => {
+                if (s.streamID !== streamID) {
+                  s.streamSocket.disconnect();
+                  return false;
                 }
-              );
-              const viewers = io.sockets.adapter.rooms.get(
-                userInfo.username.toLowerCase()
-              );
-              if (viewers && viewers.size) {
-                await db.collection("emissions").updateOne(
-                  {
-                    emissionID: emission.emissionID,
-                  },
-                  {
-                    $inc: {
-                      views: viewers.size,
-                    },
-                  }
-                );
-              }
 
-              io.to(userInfo.username.toLowerCase()).emit(
-                "new-emission",
-                emission
-              );
-            } catch (err) {
-              console.log("New Live error", err);
-            }
+                return true;
+              }))
+          );
+
+          streamSockets.push({
+            streamSocket,
+            streamID,
           });
         }
       } catch (err) {
@@ -375,8 +340,10 @@ const userSocket = async (io, socket, host, suffix) => {
      */
     socket.on("end-stream", async () => {
       try {
-        if (streamSocket?.disconnect) streamSocket.disconnect();
-        streamSocket = false;
+        streamSockets = streamSockets.filter((s) => {
+          s.streamSocket.disconnect();
+          return false;
+        });
         const db = client.db(instanceID);
         await db.collection("users").updateOne(
           {
@@ -404,9 +371,11 @@ const userSocket = async (io, socket, host, suffix) => {
 
     socket.on("disconnecting", async () => {
       try {
-        if (socket.request.session[host].userInfo && streamSocket) {
-          if (streamSocket.disconnect) streamSocket.disconnect();
-          streamSocket = false;
+        if (socket.request.session[host].userInfo && streamSockets.length) {
+          streamSockets = streamSockets.filter((s) => {
+            s.streamSocket.disconnect();
+            return false;
+          });
           const db = client.db(instanceID);
           const sessionDB = client.db("sessionServer");
           await db.collection("users").updateOne(
