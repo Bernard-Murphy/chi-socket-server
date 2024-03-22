@@ -160,7 +160,7 @@ const userSocket = async (io, socket, host, suffix) => {
      */
     socket.on("start-stream", async (details) => {
       try {
-        console.log("start stream", details.peerID);
+        console.log("start stream", details.peers);
         const sessionDB = client.db("sessionServer");
         const db = client.db(instanceID);
         const Users = db.collection("users");
@@ -206,6 +206,7 @@ const userSocket = async (io, socket, host, suffix) => {
               database: instanceID,
               clipCount: details.clipCount,
               streamID,
+              peers: JSON.stringify(details.peers),
             },
           });
           streamSocket.on("viewers", async (viewers) => {
@@ -239,15 +240,54 @@ const userSocket = async (io, socket, host, suffix) => {
             }
           });
 
-          streamSocket.on("streaming", () => {
-            streamSockets = streamSockets.filter((s) => {
-              if (s.streamID !== streamID) {
-                s.streamSocket.disconnect();
-                return false;
-              }
+          streamSocket.on("streaming", async () => {
+            try {
+              streamSockets = streamSockets.filter((s) => {
+                if (s.streamID !== streamID) {
+                  s.streamSocket.disconnect();
+                  return false;
+                }
 
-              return true;
-            });
+                return true;
+              });
+
+              const timestamp = new Date();
+              const updateObj =
+                details.clipCount > 1
+                  ? {
+                      id: details.peerID,
+                      streamTitle: details.streamTitle,
+                    }
+                  : {
+                      id: details.peerID,
+                      timestamp: timestamp,
+                      viewers: 0,
+                      streamTitle: details.streamTitle,
+                    };
+              const updatedUser = await db.collection("users").findOneAndUpdate(
+                {
+                  _id: userID,
+                },
+                {
+                  $set: {
+                    live: updateObj,
+                  },
+                },
+                {
+                  returnDocument: "after",
+                }
+              );
+              if (!updatedUser) throw "user not found";
+              io.to(username + suffix).emit("stream-start", {
+                timestamp:
+                  details.clipCount > 1
+                    ? updatedUser.live.timestamp
+                    : timestamp,
+                streamTitle: details.streamTitle,
+              });
+            } catch (err) {
+              console.log("streaming event error", err);
+            }
           });
 
           streamSockets.push({
@@ -320,7 +360,13 @@ const userSocket = async (io, socket, host, suffix) => {
               }
             );
           if (newHost) {
-            io.to(newHost.peerID).emit("init", userInfo.live.id, peerID);
+            const details = {
+              hostPeerID: userInfo.live.id,
+              firstPeer: peerID,
+              instanceID,
+              userID,
+            };
+            io.to(newHost.peerID).emit("init", details);
           } else {
             console.log("No clients available");
           }
