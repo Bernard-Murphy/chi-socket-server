@@ -35,7 +35,6 @@ const socketHandler = async (io, socket) => {
       await sessionDB.collection("streamClients").insertOne({
         _id: crypto.randomBytes(8).toString("hex"),
         peerID,
-        status: "available", // 'available' | 'occupied'
         hostID: false,
         clients: [],
       });
