@@ -160,7 +160,7 @@ const userSocket = async (io, socket, host, suffix) => {
      */
     socket.on("start-stream", async (details) => {
       try {
-        console.log("start stream", details.peers);
+        console.log("start stream", details);
         const sessionDB = client.db("sessionServer");
         const db = client.db(instanceID);
         const Users = db.collection("users");
@@ -240,8 +240,9 @@ const userSocket = async (io, socket, host, suffix) => {
             }
           });
 
-          streamSocket.on("streaming", async () => {
+          streamSocket.on("streaming", async (peerID) => {
             try {
+              console.log("streaming", peerID);
               streamSockets = streamSockets.filter((s) => {
                 if (s.streamID !== streamID) {
                   s.streamSocket.disconnect();
@@ -255,11 +256,11 @@ const userSocket = async (io, socket, host, suffix) => {
               const updateObj =
                 details.clipCount > 1
                   ? {
-                      id: details.peerID,
+                      id: peerID,
                       streamTitle: details.streamTitle,
                     }
                   : {
-                      id: details.peerID,
+                      id: peerID,
                       timestamp: timestamp,
                       viewers: 0,
                       streamTitle: details.streamTitle,
