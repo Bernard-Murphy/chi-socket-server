@@ -257,7 +257,6 @@ const userSocket = async (io, socket, host, suffix) => {
                 details.clipCount > 1
                   ? {
                       id: peerID,
-                      streamTitle: details.streamTitle,
                     }
                   : {
                       id: peerID,
@@ -301,7 +300,7 @@ const userSocket = async (io, socket, host, suffix) => {
       }
     });
 
-    socket.on("view-stream", async (hostID, peerID) => {
+    const viewStream = async (hostID, peerID) => {
       try {
         const sessionDB = client.db("sessionServer");
         const db = client.db(instanceID);
@@ -370,12 +369,15 @@ const userSocket = async (io, socket, host, suffix) => {
             io.to(newHost.peerID).emit("init", details);
           } else {
             console.log("No clients available");
+            setTimeout(() => viewStream(hostID, peerID), 2000);
           }
         }
       } catch (err) {
         console.log("view stream error", err);
       }
-    });
+    };
+
+    socket.on("view-stream", viewStream);
 
     /**
      * Hit when the user manually ends the stream
