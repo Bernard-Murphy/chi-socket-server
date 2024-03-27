@@ -29,13 +29,14 @@ process.env.PRIVATE_KEY = fs.readFileSync(__dirname + "/privateKey.key");
 let expiredTokens = [];
 
 const mongoUrl =
+  process.env.MONGO_URL ||
   "mongodb+srv://" +
-  process.env.MONGO_USER +
-  ":" +
-  encodeURIComponent(process.env.MONGO_PASSWORD) +
-  "@" +
-  process.env.MONGO_HOST +
-  "/?retryWrites=true&w=majority";
+    process.env.MONGO_USER +
+    ":" +
+    encodeURIComponent(process.env.MONGO_PASSWORD) +
+    "@" +
+    process.env.MONGO_HOST +
+    "/?retryWrites=true&w=majority";
 
 process.env.PUBLIC_KEY = fs
   .readFileSync(__dirname + "/publicKey.key")
@@ -50,13 +51,14 @@ const server = http.createServer(app);
 // Set up cookies
 const sessionStore = new MongoDBStore({
   uri:
+    process.env.MONGO_URL ||
     "mongodb+srv://" +
-    process.env.MONGO_USER +
-    ":" +
-    encodeURIComponent(process.env.MONGO_PASSWORD) +
-    "@" +
-    process.env.MONGO_HOST +
-    "/?retryWrites=true&w=majority",
+      process.env.MONGO_USER +
+      ":" +
+      encodeURIComponent(process.env.MONGO_PASSWORD) +
+      "@" +
+      process.env.MONGO_HOST +
+      "/?retryWrites=true&w=majority",
 
   databaseName: process.env.DATABASE,
   collection: "sessions",
